@@ -7,35 +7,45 @@ SAMPLE_RATE = 44100
 TONE_DURATION_SEC = 0.1                              # duration of each sound chunk in seconds
 CHUNK_SIZE = int(SAMPLE_RATE * TONE_DURATION_SEC)    # number of frames per chunk
 
-MIN_FREQUENCY_HZ = 100.0
-MAX_FREQUENCY_HZ = 800.0
+MIN_FREQUENCY_HZ = 65.41    # C2
+MAX_FREQUENCY_HZ = 1046.5   # C6
 
-t = np.arange(CHUNK_SIZE) / SAMPLE_RATE
-current_phase = 0.0
+# TODO: replace global variables with class state
+global_frequency_normalised = 0
+global_volume = 0.0
+global_current_phase = 0.0
+
+def audio_callback(_in_data, frame_count, _timing_info, _status):
+    global global_current_phase
+    global global_frequency_normalised
+    global global_volume
+
+    current_frequency = MIN_FREQUENCY_HZ + (1 - global_frequency_normalised) * (MAX_FREQUENCY_HZ - MIN_FREQUENCY_HZ)
+    
+    angular_frequency = 2.0 * np.pi * current_frequency
+    
+    # add a fade-in/fade-out (Hanning window) to the chunk to reduce clicks
+    window = np.hanning(frame_count)
+
+    t_local = np.arange(frame_count) / SAMPLE_RATE
+
+    # tone generation: V * sin(2*pi*f*t + phase_offset) * window
+    samples = (global_volume * np.sin(angular_frequency * t_local + global_current_phase) * window).astype(np.float32)
+
+    # calculate phase at end of this chunk for seamless transition
+    global_current_phase = (global_current_phase + angular_frequency * TONE_DURATION_SEC) % (2.0 * np.pi)
+
+    return (samples.tobytes(), pyaudio.paContinue)
 
 player = pyaudio.PyAudio()
 stream = player.open(format=pyaudio.paFloat32,
-                channels=1,
-                rate=SAMPLE_RATE,
-                output=True)
+                     channels=1,
+                     rate=SAMPLE_RATE,
+                     output=True,
+                     frames_per_buffer=CHUNK_SIZE,
+                     stream_callback=audio_callback)
 
-def play_tone(frequency_normalised, volume):
-    global current_phase
-    current_frequency = MIN_FREQUENCY_HZ + (1 - frequency_normalised) * (MAX_FREQUENCY_HZ - MIN_FREQUENCY_HZ)
-
-    # 2 * pi * f * t
-    angular_frequency = 2.0 * np.pi * current_frequency
-
-    # add a fade-in/fade-out (Hanning window) to the chunk to reduce clicks
-    window = np.hanning(CHUNK_SIZE)
-
-    # tone generation: V * sin(2*pi*f*t + phase_offset) * window
-    samples = (volume * np.sin(angular_frequency * t + current_phase) * window).astype(np.float32)
-
-    # calculate phase at end of this chunk and use it as the starting phase for next chunk.
-    current_phase = (current_phase + angular_frequency * TONE_DURATION_SEC) % (2.0 * np.pi)
-
-    stream.write(samples.tobytes())
+stream.start_stream()
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -87,7 +97,8 @@ with mp_pose.Pose(
                 draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
                 draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
-                play_tone(max(0.0, min(1.0, left_wrist.y)), max(0.0, min(1.0, left_wrist.x)))
+                global_frequency_normalised = max(0.0, min(1.0, left_wrist.y))
+                global_volume = max(0.0, min(1.0, left_wrist.x))
 
         cv2.imshow('image', frame)
         
@@ -96,6 +107,6 @@ with mp_pose.Pose(
 
 cap.release()
 cv2.destroyAllWindows()
+player.close(stream)
 stream.stop_stream()
 stream.close()
-player.close()
