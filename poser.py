@@ -4,14 +4,15 @@ import pyaudio
 import numpy as np
 
 SAMPLE_RATE = 44100
-TONE_DURATION_SEC = 0.1                              # duration of each sound chunk in seconds
+TONE_DURATION_SEC = 0.1                              # chunk duration in seconds
 CHUNK_SIZE = int(SAMPLE_RATE * TONE_DURATION_SEC)    # number of frames per chunk
 
 MIN_FREQUENCY_HZ = 65.41    # C2
 MAX_FREQUENCY_HZ = 1046.5   # C6
 
 # TODO: replace global variables with class state
-global_frequency_normalised = 0
+global_frequency_normalised = 0.0
+global_previous_frequency_normalised = 0.0
 global_volume = 0.0
 global_current_phase = 0.0
 
@@ -19,22 +20,35 @@ def audio_callback(_in_data, frame_count, _timing_info, _status):
     global global_current_phase
     global global_frequency_normalised
     global global_volume
+    global global_previous_frequency_normalised
 
-    current_frequency = MIN_FREQUENCY_HZ + (1 - global_frequency_normalised) * (MAX_FREQUENCY_HZ - MIN_FREQUENCY_HZ)
+    # interpolate from global_previous_frequency_normalised to global_frequency_normalised over frame_count steps
+    interpolated_normalised_freqs = np.linspace(
+        global_previous_frequency_normalised,
+        global_frequency_normalised,
+        frame_count,
+        endpoint=False
+    )
+
+    interpolated_frequencies_hz = MIN_FREQUENCY_HZ + (1 - interpolated_normalised_freqs) * (MAX_FREQUENCY_HZ - MIN_FREQUENCY_HZ)
+    angular_frequencies = 2.0 * np.pi * interpolated_frequencies_hz
     
-    angular_frequency = 2.0 * np.pi * current_frequency
+    # calculate the change in phase (delta_phase) for each sample
+    delta_phases = angular_frequencies * (1.0 / SAMPLE_RATE)
+    
+    # cumulatively sum the phase changes starting from 'global_current_phase'
+    phases = global_current_phase + np.cumsum(delta_phases) - delta_phases[0]
     
     # add a fade-in/fade-out (Hanning window) to the chunk to reduce clicks
     window = np.hanning(frame_count)
+    
+    # tone generation: V * sin(phases) * window
+    samples = (global_volume * np.sin(phases) * window).astype(np.float32)
 
-    t_local = np.arange(frame_count) / SAMPLE_RATE
-
-    # tone generation: V * sin(2*pi*f*t + phase_offset) * window
-    samples = (global_volume * np.sin(angular_frequency * t_local + global_current_phase) * window).astype(np.float32)
-
-    # calculate phase at end of this chunk for seamless transition
-    global_current_phase = (global_current_phase + angular_frequency * TONE_DURATION_SEC) % (2.0 * np.pi)
-
+    # store the phase at the end of this chunk for the next chunk's start
+    global_current_phase = phases[-1] % (2.0 * np.pi) 
+    global_previous_frequency_normalised = global_frequency_normalised
+    
     return (samples.tobytes(), pyaudio.paContinue)
 
 player = pyaudio.PyAudio()
