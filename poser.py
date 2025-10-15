@@ -13,7 +13,7 @@ MAX_FREQUENCY_HZ = 1046.5   # C6
 # TODO: replace global variables with class state
 global_frequency_normalised = 0.0
 global_previous_frequency_normalised = 0.0
-global_volume = 0.0
+global_volume = 1.0
 global_current_phase = 0.0
 
 def audio_callback(_in_data, frame_count, _timing_info, _status):
@@ -43,7 +43,7 @@ def audio_callback(_in_data, frame_count, _timing_info, _status):
     window = np.hanning(frame_count)
     
     # tone generation: V * sin(phases) * window
-    samples = (global_volume * np.sin(phases) * window).astype(np.float32)
+    samples = ((1 - global_volume) * np.sin(phases) * window).astype(np.float32)
 
     # store the phase at the end of this chunk for the next chunk's start
     global_current_phase = phases[-1] % (2.0 * np.pi) 
@@ -112,7 +112,7 @@ with mp_pose.Pose(
                 draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
                 global_frequency_normalised = max(0.0, min(1.0, left_wrist.y))
-                global_volume = max(0.0, min(1.0, left_wrist.x))
+                global_volume = max(0.0, min(1.0, right_wrist.y))
 
         cv2.imshow('image', frame)
         
