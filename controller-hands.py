@@ -9,6 +9,7 @@ mp_hands = mp.solutions.hands
 NOTE_ON_CH1 = 0x90
 NOTE_OFF_CH1 = 0x80
 AFTERTOUCH_CH1 = 0xD0
+ALL_OFF_CH1 = 0xB1
 
 midiout = rtmidi.MidiOut()
 available_ports = midiout.get_ports()
@@ -123,9 +124,14 @@ with mp_hands.Hands(
             clamped_volume = max(0.0, min(1.0, right_wrist.y))
 
             left_wrist_landmarks = world_landmarks[1]
+            thumb_x = left_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
 
-            corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks)
-            previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume)
+            if thumb_x < 0.06:
+                corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks)
+                previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume)
+            else:
+                midiout.send_message([ALL_OFF_CH1, 123, 0])
+                previous_corrected_note = 0
 
         cv2.imshow('image', cv2.flip(frame, 1))
 
