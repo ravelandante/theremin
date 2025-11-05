@@ -8,10 +8,9 @@ mp_hands = mp.solutions.hands
 
 NOTE_ON_CH1 = 0x90
 NOTE_OFF_CH1 = 0x80
-POLY_AFTERTOUCH_CH1 = 0xA0
+POLY_AFTERTOUCH_CH1 = 0xD0
 
 midiout = rtmidi.MidiOut()
-midiin = rtmidi.MidiIn()
 available_ports = midiout.get_ports()
 
 if available_ports:
@@ -20,8 +19,7 @@ else:
     print("opening virtual port")
     midiout.open_virtual_port("My virtual output")
 
-def send_midi(normalised_pitch, previous_corrected_note, volume):
-    corrected_note = round(1 - normalised_pitch, 1) * 10 + 60
+def send_midi(corrected_note, previous_corrected_note, volume):
     corrected_volume = (1 - volume) * 127
 
     if previous_corrected_note != corrected_note:
@@ -30,9 +28,19 @@ def send_midi(normalised_pitch, previous_corrected_note, volume):
         note_off = [NOTE_OFF_CH1, previous_corrected_note, 0]
         midiout.send_message(note_off)
 
-    note_aftertouch = [POLY_AFTERTOUCH_CH1, corrected_note, corrected_volume]
+    note_aftertouch = [POLY_AFTERTOUCH_CH1, corrected_volume]
     midiout.send_message(note_aftertouch)
     return corrected_note
+
+def get_corrected_note(normalised_pitch, left_wrist_landmarks):
+    base_note = round(1 - normalised_pitch, 1) * 10 + 60
+    left_index_finger_y = 1 - max(0.0, min(1.0, left_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y))
+    left_wrist_y = 1 - max(0.0, min(1.0, left_wrist_landmarks[mp_hands.HandLandmark.WRIST].y))
+    
+    if left_index_finger_y - left_wrist_y < 0.5:
+        base_note += 2
+    
+    return base_note
 
 def draw_coords(normal_x, normal_y, image_w, image_h):
     # coordinates are normalized (0.0 to 1.0):
@@ -75,21 +83,26 @@ with mp_hands.Hands(
             for i, hand_landmarks in enumerate(results.multi_hand_landmarks):
                 hand_label = results.multi_handedness[i].classification[0].label
 
-                wrist_landmark = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST]
+                wrist_landmark = hand_landmarks.landmark
 
                 if hand_label == "Right":
-                    right_wrist = wrist_landmark
+                    right_wrist_landmarks = wrist_landmark
                 elif hand_label == "Left":
-                    left_wrist = wrist_landmark
+                    left_wrist_landmarks = wrist_landmark
                 
-            image_h, image_w, _ = frame.shape
-            draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
-            draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
+            if right_wrist_landmarks and left_wrist_landmarks:
+                left_wrist = left_wrist_landmarks[mp_hands.HandLandmark.WRIST]
+                right_wrist = right_wrist_landmarks[mp_hands.HandLandmark.WRIST]
 
-            normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
-            normalised_volume = max(0.0, min(1.0, right_wrist.y))
+                image_h, image_w, _ = frame.shape
+                draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
+                draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
-            previous_corrected_note = send_midi(normalised_freq_coords, previous_corrected_note, normalised_volume)
+                normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
+                normalised_volume = max(0.0, min(1.0, right_wrist.y))
+
+                corrected_note = get_corrected_note(normalised_freq_coords, left_wrist_landmarks)
+                previous_corrected_note = send_midi(corrected_note, previous_corrected_note, normalised_volume)
 
         cv2.imshow('image', cv2.flip(frame, 1))
 
@@ -98,3 +111,4 @@ with mp_hands.Hands(
 
 cap.release()
 cv2.destroyAllWindows()
+midiout.close_port()
