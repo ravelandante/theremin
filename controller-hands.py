@@ -8,7 +8,7 @@ mp_hands = mp.solutions.hands
 
 NOTE_ON_CH1 = 0x90
 NOTE_OFF_CH1 = 0x80
-POLY_AFTERTOUCH_CH1 = 0xD0
+AFTERTOUCH_CH1 = 0xD0
 
 midiout = rtmidi.MidiOut()
 available_ports = midiout.get_ports()
@@ -28,16 +28,26 @@ def send_midi(corrected_note, previous_corrected_note, volume):
         note_off = [NOTE_OFF_CH1, previous_corrected_note, 0]
         midiout.send_message(note_off)
 
-    note_aftertouch = [POLY_AFTERTOUCH_CH1, corrected_volume]
+    note_aftertouch = [AFTERTOUCH_CH1, corrected_volume]
     midiout.send_message(note_aftertouch)
     return corrected_note
 
 def get_corrected_note(normalised_pitch, left_wrist_landmarks):
     base_note = round(1 - normalised_pitch, 1) * 10 + 60
+
     left_index_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
-    
+    left_middle_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
+    left_ring_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y
+    left_pinky_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y
+
     if left_index_finger_y < 0.03:
         base_note += 2
+        if left_middle_finger_y < 0.05:
+            base_note += 2
+            if left_ring_finger_y < 0.05:
+                base_note += 1
+                if left_pinky_finger_y < 0.03:
+                    base_note += 2
     
     return base_note
 
