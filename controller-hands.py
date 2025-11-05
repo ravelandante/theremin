@@ -34,21 +34,31 @@ def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume:
 def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list) -> int:
     base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
-    finger_ys = {
-        "index": -left_hand_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y,
-        "middle": -left_hand_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y,
-        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y,
-        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y,
+    # TODO: make finger bend margins relative to hand size
+    finger_bent = {
+        "index": -left_hand_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
+        "middle": -left_hand_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.05,
+        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y< 0.05,
+        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y< 0.03,
     }
 
-    if finger_ys["index"] < 0.03:
+    if finger_bent["index"]:
         base_note += 2
-        if finger_ys["middle"] < 0.05:
+        if finger_bent["middle"]:
             base_note += 2
-            if finger_ys["ring"] < 0.05:
+            if finger_bent["ring"]:
                 base_note += 1
-                if finger_ys["pinky"] < 0.03:
+                if finger_bent["pinky"]:
                     base_note += 2
+    else:
+        if finger_bent["pinky"]:
+            if finger_bent["ring"]:
+                if finger_bent["middle"]:
+                    base_note += 9
+                else:
+                    base_note += 11
+            else:
+                base_note += 12
     
     return int(base_note)
 
