@@ -5,7 +5,6 @@ import rtmidi
 midiout = rtmidi.MidiOut()
 midiin = rtmidi.MidiIn()
 available_ports = midiout.get_ports()
-previous_corrected_note = 0
 
 if available_ports:
     midiout.open_port(0)
@@ -13,8 +12,7 @@ else:
     print("opening virtual port")
     midiout.open_virtual_port("My virtual output")
 
-def send_midi(normalised_pitch):
-    global previous_corrected_note
+def send_midi(normalised_pitch, previous_corrected_note):
     corrected_note = round(1 - normalised_pitch, 1) * 10 + 60
 
     if previous_corrected_note != corrected_note:
@@ -23,7 +21,7 @@ def send_midi(normalised_pitch):
         note_off = [0x80, previous_corrected_note, 0]
         midiout.send_message(note_off)
 
-    previous_corrected_note = corrected_note
+    return corrected_note
 
 mp_drawing = mp.solutions.drawing_utils
 mp_pose = mp.solutions.pose
@@ -44,6 +42,7 @@ with mp_pose.Pose(
     min_detection_confidence=0.5, 
     min_tracking_confidence=0.5) as pose_detector:
 
+    previous_corrected_note = 0
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
@@ -79,7 +78,7 @@ with mp_pose.Pose(
 
                 initial_note_on = [0x90, previous_corrected_note, 112]
                 midiout.send_message(initial_note_on)
-                send_midi(normalised_freq_coords)
+                previous_corrected_note = send_midi(normalised_freq_coords, previous_corrected_note)
 
         cv2.imshow('image', frame)
         
