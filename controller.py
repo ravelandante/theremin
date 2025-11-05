@@ -84,8 +84,6 @@ with mp_pose.Pose(
                 normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
                 normalised_volume = max(0.0, min(1.0, right_wrist.y))
 
-                initial_note_on = [NOTE_ON_CH1, previous_corrected_note, 112]
-                midiout.send_message(initial_note_on)
                 previous_corrected_note = send_midi(normalised_freq_coords, previous_corrected_note, normalised_volume)
 
         cv2.imshow('image', frame)
