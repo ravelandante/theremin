@@ -56,6 +56,8 @@ with mp_pose.Pose(
             print("unable to get webcam feed")
             continue
 
+        frame.flags.writeable = False
+        
         # flip image for natural mirror view
         frame = cv2.flip(frame, 1)
 
@@ -64,6 +66,8 @@ with mp_pose.Pose(
         
         results = pose_detector.process(image_to_detect)
         
+        frame.flags.writeable = True
+
         if results.pose_landmarks:
             mp_drawing.draw_landmarks(
                 frame,
