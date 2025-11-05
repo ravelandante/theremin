@@ -34,10 +34,9 @@ def send_midi(corrected_note, previous_corrected_note, volume):
 
 def get_corrected_note(normalised_pitch, left_wrist_landmarks):
     base_note = round(1 - normalised_pitch, 1) * 10 + 60
-    left_index_finger_y = 1 - max(0.0, min(1.0, left_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y))
-    left_wrist_y = 1 - max(0.0, min(1.0, left_wrist_landmarks[mp_hands.HandLandmark.WRIST].y))
+    left_index_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
     
-    if left_index_finger_y - left_wrist_y < 0.5:
+    if left_index_finger_y < 0.03:
         base_note += 2
     
     return base_note
