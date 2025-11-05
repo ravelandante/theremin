@@ -19,39 +19,39 @@ else:
     print("opening virtual port")
     midiout.open_virtual_port("My virtual output")
 
-def send_midi(corrected_note, previous_corrected_note, volume):
-    corrected_volume = (1 - volume) * 127
+def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume: float) -> int:
+    normalised_volume = (1 - clamped_volume) * 127
 
     if previous_corrected_note != corrected_note:
-        note_on = [NOTE_ON_CH1, corrected_note, corrected_volume]
-        midiout.send_message(note_on)
-        note_off = [NOTE_OFF_CH1, previous_corrected_note, 0]
-        midiout.send_message(note_off)
+        midiout.send_message([NOTE_ON_CH1, corrected_note, normalised_volume])
+        midiout.send_message([NOTE_OFF_CH1, previous_corrected_note, 0])
 
-    note_aftertouch = [AFTERTOUCH_CH1, corrected_volume]
+    note_aftertouch = [AFTERTOUCH_CH1, normalised_volume]
     midiout.send_message(note_aftertouch)
     return corrected_note
 
-def get_corrected_note(normalised_pitch, left_wrist_landmarks):
-    base_note = round(1 - normalised_pitch, 1) * 10 + 60
+def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list) -> int:
+    base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
-    left_index_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
-    left_middle_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
-    left_ring_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y
-    left_pinky_finger_y = -left_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y
+    finger_ys = {
+        "index": -left_hand_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y,
+        "middle": -left_hand_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y,
+        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y,
+        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y,
+    }
 
-    if left_index_finger_y < 0.03:
+    if finger_ys["index"] < 0.03:
         base_note += 2
-        if left_middle_finger_y < 0.05:
+        if finger_ys["middle"] < 0.05:
             base_note += 2
-            if left_ring_finger_y < 0.05:
+            if finger_ys["ring"] < 0.05:
                 base_note += 1
-                if left_pinky_finger_y < 0.03:
+                if finger_ys["pinky"] < 0.03:
                     base_note += 2
     
-    return base_note
+    return int(base_note)
 
-def get_hand_landmarks(multi_hand_landmarks, multi_handedness):
+def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> list:
     right_wrist_landmarks = None
     left_wrist_landmarks = None
     for i, hand_landmarks in enumerate(multi_hand_landmarks):
@@ -66,8 +66,16 @@ def get_hand_landmarks(multi_hand_landmarks, multi_handedness):
         
     return [right_wrist_landmarks, left_wrist_landmarks]
 
-def draw_coords(normal_x, normal_y, image_w, image_h):
-    # coordinates are normalized (0.0 to 1.0):
+def draw_landmarks(multi_hand_landmarks: list, frame):
+    for hand_landmarks in multi_hand_landmarks:
+        mp_drawing.draw_landmarks(
+            frame,
+            hand_landmarks,
+            mp_hands.HAND_CONNECTIONS,
+            mp_drawing_styles.get_default_hand_landmarks_style(),
+            mp_drawing_styles.get_default_hand_connections_style())
+
+def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int):
     pixel_x = int(normal_x * image_w)
     pixel_y = int(normal_y * image_h)
 
@@ -95,13 +103,7 @@ with mp_hands.Hands(
         frame.flags.writeable = True
 
         if results.multi_hand_landmarks:
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(
-                    frame,
-                    hand_landmarks,
-                    mp_hands.HAND_CONNECTIONS,
-                    mp_drawing_styles.get_default_hand_landmarks_style(),
-                    mp_drawing_styles.get_default_hand_connections_style())
+            draw_landmarks(results.multi_hand_landmarks, frame)
 
         if results.multi_hand_world_landmarks and len(results.multi_hand_world_landmarks) == 2:
             world_landmarks = get_hand_landmarks(results.multi_hand_world_landmarks, results.multi_handedness)
@@ -117,13 +119,13 @@ with mp_hands.Hands(
             draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
             draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
-            normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
-            normalised_volume = max(0.0, min(1.0, right_wrist.y))
+            clamped_pitch = max(0.0, min(1.0, left_wrist.y))
+            clamped_volume = max(0.0, min(1.0, right_wrist.y))
 
             left_wrist_landmarks = world_landmarks[1]
 
-            corrected_note = get_corrected_note(normalised_freq_coords, left_wrist_landmarks)
-            previous_corrected_note = send_midi(corrected_note, previous_corrected_note, normalised_volume)
+            corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks)
+            previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume)
 
         cv2.imshow('image', cv2.flip(frame, 1))
 
