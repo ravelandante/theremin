@@ -7,7 +7,6 @@ NOTE_OFF_CH1 = 0x80
 POLY_AFTERTOUCH_CH1 = 0xA0
 
 midiout = rtmidi.MidiOut()
-midiin = rtmidi.MidiIn()
 available_ports = midiout.get_ports()
 
 if available_ports:
