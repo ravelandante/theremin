@@ -42,6 +42,21 @@ def get_corrected_note(normalised_pitch, left_wrist_landmarks):
     
     return base_note
 
+def get_hand_landmarks(multi_hand_landmarks, multi_handedness):
+    right_wrist_landmarks = None
+    left_wrist_landmarks = None
+    for i, hand_landmarks in enumerate(multi_hand_landmarks):
+        hand_label = multi_handedness[i].classification[0].label
+
+        hand_landmark = hand_landmarks.landmark
+
+        if hand_label == "Right":
+            right_wrist_landmarks = hand_landmark
+        elif hand_label == "Left":
+            left_wrist_landmarks = hand_landmark
+        
+    return [right_wrist_landmarks, left_wrist_landmarks]
+
 def draw_coords(normal_x, normal_y, image_w, image_h):
     # coordinates are normalized (0.0 to 1.0):
     pixel_x = int(normal_x * image_w)
@@ -79,30 +94,27 @@ with mp_hands.Hands(
                     mp_drawing_styles.get_default_hand_landmarks_style(),
                     mp_drawing_styles.get_default_hand_connections_style())
 
-        if results.multi_hand_landmarks and len(results.multi_hand_landmarks) == 2:
-            for i, hand_landmarks in enumerate(results.multi_hand_landmarks):
-                hand_label = results.multi_handedness[i].classification[0].label
-
-                wrist_landmark = hand_landmarks.landmark
-
-                if hand_label == "Right":
-                    right_wrist_landmarks = wrist_landmark
-                elif hand_label == "Left":
-                    left_wrist_landmarks = wrist_landmark
+        if results.multi_hand_world_landmarks and len(results.multi_hand_world_landmarks) == 2:
+            world_landmarks = get_hand_landmarks(results.multi_hand_world_landmarks, results.multi_handedness)
+            image_landmarks = get_hand_landmarks(results.multi_hand_landmarks, results.multi_handedness)
                 
-            if right_wrist_landmarks and left_wrist_landmarks:
-                left_wrist = left_wrist_landmarks[mp_hands.HandLandmark.WRIST]
-                right_wrist = right_wrist_landmarks[mp_hands.HandLandmark.WRIST]
+            if not image_landmarks[0] or not image_landmarks[1]:
+                continue
 
-                image_h, image_w, _ = frame.shape
-                draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
-                draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
+            left_wrist = image_landmarks[1][mp_hands.HandLandmark.WRIST]
+            right_wrist = image_landmarks[0][mp_hands.HandLandmark.WRIST]
 
-                normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
-                normalised_volume = max(0.0, min(1.0, right_wrist.y))
+            image_h, image_w, _ = frame.shape
+            draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
+            draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
-                corrected_note = get_corrected_note(normalised_freq_coords, left_wrist_landmarks)
-                previous_corrected_note = send_midi(corrected_note, previous_corrected_note, normalised_volume)
+            normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
+            normalised_volume = max(0.0, min(1.0, right_wrist.y))
+
+            left_wrist_landmarks = world_landmarks[1]
+
+            corrected_note = get_corrected_note(normalised_freq_coords, left_wrist_landmarks)
+            previous_corrected_note = send_midi(corrected_note, previous_corrected_note, normalised_volume)
 
         cv2.imshow('image', cv2.flip(frame, 1))
 
