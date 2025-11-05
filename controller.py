@@ -2,6 +2,9 @@ import cv2
 import mediapipe as mp
 import rtmidi
 
+NOTE_ON_CH1 = 0x90
+NOTE_OFF_CH1 = 0x80
+
 midiout = rtmidi.MidiOut()
 midiin = rtmidi.MidiIn()
 available_ports = midiout.get_ports()
@@ -16,9 +19,9 @@ def send_midi(normalised_pitch, previous_corrected_note):
     corrected_note = round(1 - normalised_pitch, 1) * 10 + 60
 
     if previous_corrected_note != corrected_note:
-        note_on = [0x90, corrected_note, 112]
+        note_on = [NOTE_ON_CH1, corrected_note, 112]
         midiout.send_message(note_on)
-        note_off = [0x80, previous_corrected_note, 0]
+        note_off = [NOTE_OFF_CH1, previous_corrected_note, 0]
         midiout.send_message(note_off)
 
     return corrected_note
@@ -76,7 +79,7 @@ with mp_pose.Pose(
 
                 normalised_freq_coords = max(0.0, min(1.0, left_wrist.y))
 
-                initial_note_on = [0x90, previous_corrected_note, 112]
+                initial_note_on = [NOTE_ON_CH1, previous_corrected_note, 112]
                 midiout.send_message(initial_note_on)
                 previous_corrected_note = send_midi(normalised_freq_coords, previous_corrected_note)
 
