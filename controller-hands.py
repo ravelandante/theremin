@@ -86,7 +86,7 @@ def draw_landmarks(multi_hand_landmarks: list, frame):
             mp_drawing_styles.get_default_hand_landmarks_style(),
             mp_drawing_styles.get_default_hand_connections_style())
 
-def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int):
+def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int, frame):
     pixel_x = int(normal_x * image_w)
     pixel_y = int(normal_y * image_h)
 
@@ -94,6 +94,16 @@ def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int):
         f'X:{round(normal_x, 2)} Y:{round(normal_y, 2)}', 
         (pixel_x - 50, pixel_y - 20), 
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+def draw_note_name(midi_note: int, frame):
+    note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    octave = (midi_note // 12) - 1
+    note_index = midi_note % 12
+
+    cv2.putText(frame, 
+        f'Note: {note_names[note_index]}{octave}', 
+        (50, 50), 
+        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
 cap = cv2.VideoCapture(0)
 with mp_hands.Hands(
@@ -132,8 +142,8 @@ with mp_hands.Hands(
 
             image_h, image_w, _ = frame.shape
             if draw_landmarks_enabled:
-                draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
-                draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
+                draw_coords(right_wrist.x, right_wrist.y, image_w, image_h, frame)
+                draw_coords(left_wrist.x, left_wrist.y, image_w, image_h, frame)
 
             clamped_pitch = max(0.0, min(1.0, left_wrist.y))
             clamped_volume = max(0.0, min(1.0, right_wrist.y))
@@ -144,6 +154,7 @@ with mp_hands.Hands(
             if thumb_x < 0.06:
                 corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks, MAJOR_SCALE_INTERVALS)
                 previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
+                draw_note_name(corrected_note, frame)
             else:
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
                 previous_corrected_note = 0
