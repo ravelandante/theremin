@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import rtmidi
+import time
 
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -10,6 +11,7 @@ NOTE_ON_CH1 = 0x90
 NOTE_OFF_CH1 = 0x80
 AFTERTOUCH_CH1 = 0xD0
 ALL_OFF_CH1 = 0xB1
+PITCH_BEND_CH1 = 0xE0
 
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
@@ -110,6 +112,16 @@ def draw_note_name(midi_note: int, frame):
         (50, 50), 
         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
+def calculate_and_send_pitch_bend(left_wrist_x: float, previous_left_wrist_x: float, current_time: float, previous_time: float, pitch_bend_range: int):
+    if previous_left_wrist_x is not None and previous_time is not None:
+        delta_x = left_wrist_x - previous_left_wrist_x
+        delta_time = current_time - previous_time
+
+        pitch_bend_amount = int(pitch_bend_range + ((delta_x) / delta_time) * 4096)
+        pitch_bend_amount = max(0, min(16383, pitch_bend_amount))
+
+        midiout.send_message([PITCH_BEND_CH1, pitch_bend_amount & 0x7F, (pitch_bend_amount >> 7) & 0x7F])
+
 cap = cv2.VideoCapture(0)
 with mp_hands.Hands(
     model_complexity=0,
@@ -119,6 +131,10 @@ with mp_hands.Hands(
     previous_corrected_note = 0
     previous_clamped_volume = 0
     draw_landmarks_enabled = False
+
+    previous_left_wrist_x = None
+    previous_time = None
+    pitch_bend_range = 8192
 
     while cap.isOpened():
         success, frame = cap.read()
@@ -155,6 +171,12 @@ with mp_hands.Hands(
 
             right_wrist_landmarks = world_landmarks[0]
             thumb_x = right_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
+
+            current_time = time.time()
+            calculate_and_send_pitch_bend(left_wrist.x, previous_left_wrist_x, current_time, previous_time, pitch_bend_range)
+
+            previous_left_wrist_x = left_wrist.x
+            previous_time = current_time
 
             if thumb_x > -0.06:
                 corrected_note = get_corrected_note(clamped_pitch, right_wrist_landmarks, MAJOR_SCALE_INTERVALS)
