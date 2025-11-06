@@ -20,15 +20,15 @@ else:
     print("opening virtual port")
     midiout.open_virtual_port("My virtual output")
 
-def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume: float) -> int:
+def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume: float, previous_clamped_volume: int) -> int:
     normalised_volume = (1 - clamped_volume) * 127
 
     if previous_corrected_note != corrected_note:
         midiout.send_message([NOTE_ON_CH1, corrected_note, normalised_volume])
         midiout.send_message([NOTE_OFF_CH1, previous_corrected_note, 0])
 
-    note_aftertouch = [AFTERTOUCH_CH1, normalised_volume]
-    midiout.send_message(note_aftertouch)
+    if previous_clamped_volume != normalised_volume:
+        midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
     return corrected_note
 
 def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list) -> int:
@@ -143,7 +143,7 @@ with mp_hands.Hands(
 
             if thumb_x < 0.06:
                 corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks)
-                previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume)
+                previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
             else:
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
                 previous_corrected_note = 0
