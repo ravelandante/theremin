@@ -38,7 +38,7 @@ def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume:
     if previous_clamped_volume != normalised_volume:
         midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
 
-def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale: list) -> int:
+def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale: list, active_fingers: list) -> int:
     base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
     # TODO: make finger bend margins relative to hand size
@@ -48,6 +48,11 @@ def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale:
         "ring": -right_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.05,
         "pinky": -right_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
+
+    active_fingers[1] = finger_bent["index"]
+    active_fingers[2] = finger_bent["middle"]
+    active_fingers[3] = finger_bent["ring"]
+    active_fingers[4] = finger_bent["pinky"]
 
     scale_degree = 1
     if finger_bent["index"]:
@@ -68,7 +73,7 @@ def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale:
             else:
                 scale_degree = 8
 
-    return int(base_note + scale[scale_degree - 1])
+    return [int(base_note + scale[scale_degree - 1]), active_fingers]
 
 def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> list:
     right_wrist_landmarks = None
@@ -85,7 +90,7 @@ def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> li
         
     return [right_wrist_landmarks, left_wrist_landmarks]
 
-def draw_landmarks(multi_hand_landmarks: list, frame):
+def draw_landmarks(multi_hand_landmarks: list, frame, active_fingers: list, handedness: list):
     finger_tips = [
         mp_hands.HandLandmark.THUMB_TIP,
         mp_hands.HandLandmark.INDEX_FINGER_TIP,
@@ -94,14 +99,16 @@ def draw_landmarks(multi_hand_landmarks: list, frame):
         mp_hands.HandLandmark.PINKY_TIP,
     ]
 
-    for hand_landmarks in multi_hand_landmarks:
-        for tip in finger_tips:
+    for hand_index, hand_landmarks in enumerate(multi_hand_landmarks):
+        is_right_hand = handedness[hand_index].classification[0].label == "Right"
+        for i, tip in enumerate(finger_tips):
             landmark = hand_landmarks.landmark[tip]
             image_h, image_w, _ = frame.shape
             pixel_x = int(landmark.x * image_w)
             pixel_y = int(landmark.y * image_h)
 
-            cv2.circle(frame, (pixel_x, pixel_y), 8, (0, 255, 0), -1)
+            color = (0, 0, 255) if is_right_hand and active_fingers[i] else (0, 255, 0)
+            cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
 
 def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int, frame):
     pixel_x = int(normal_x * image_w)
@@ -139,7 +146,8 @@ with mp_hands.Hands(
 
     previous_corrected_note = 0
     previous_clamped_volume = 0
-    draw_landmarks_enabled = False
+    draw_landmarks_enabled = True
+    active_fingers = [False] * 5
 
     previous_left_wrist_x = None
     previous_time = None
@@ -158,7 +166,7 @@ with mp_hands.Hands(
         frame.flags.writeable = True
 
         if draw_landmarks_enabled and results.multi_hand_landmarks:
-            draw_landmarks(results.multi_hand_landmarks, frame)
+            draw_landmarks(results.multi_hand_landmarks, frame, active_fingers, results.multi_handedness)
 
         if results.multi_hand_world_landmarks and len(results.multi_hand_world_landmarks) == 2:
             world_landmarks = get_hand_landmarks(results.multi_hand_world_landmarks, results.multi_handedness)
@@ -188,13 +196,16 @@ with mp_hands.Hands(
             previous_time = current_time
 
             if thumb_x > -0.06:
-                corrected_note = get_corrected_note(clamped_pitch, right_wrist_landmarks, MAJOR_SCALE_INTERVALS)
+                active_fingers[0] = True
+
+                corrected_note, active_fingers = get_corrected_note(clamped_pitch, right_wrist_landmarks, MAJOR_SCALE_INTERVALS, active_fingers)
                 send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
 
                 previous_corrected_note = corrected_note
                 previous_clamped_volume = clamped_volume
                 draw_note_name(corrected_note, frame)
             else:
+                active_fingers = [False] * 5
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
                 previous_corrected_note = 0
 
