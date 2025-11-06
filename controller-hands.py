@@ -102,18 +102,22 @@ with mp_hands.Hands(
     min_tracking_confidence=0.5) as hand_detector:
 
     previous_corrected_note = 0
+    previous_clamped_volume = 0
+    draw_landmarks_enabled = False
+
     while cap.isOpened():
         success, frame = cap.read()
         if not success:
             print("unable to get webcam feed")
             continue
 
+        frame = cv2.resize(frame, (640, 360))
         frame.flags.writeable = False
         image_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hand_detector.process(image_to_detect)
         frame.flags.writeable = True
 
-        if results.multi_hand_landmarks:
+        if draw_landmarks_enabled and results.multi_hand_landmarks:
             draw_landmarks(results.multi_hand_landmarks, frame)
 
         if results.multi_hand_world_landmarks and len(results.multi_hand_world_landmarks) == 2:
@@ -127,8 +131,9 @@ with mp_hands.Hands(
             right_wrist = image_landmarks[0][mp_hands.HandLandmark.WRIST]
 
             image_h, image_w, _ = frame.shape
-            draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
-            draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
+            if draw_landmarks_enabled:
+                draw_coords(right_wrist.x, right_wrist.y, image_w, image_h)
+                draw_coords(left_wrist.x, left_wrist.y, image_w, image_h)
 
             clamped_pitch = max(0.0, min(1.0, left_wrist.y))
             clamped_volume = max(0.0, min(1.0, right_wrist.y))
@@ -145,8 +150,11 @@ with mp_hands.Hands(
 
         cv2.imshow('image', cv2.flip(frame, 1))
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q'):
             break
+        elif key == ord('d'):
+            draw_landmarks_enabled = not draw_landmarks_enabled
 
 cap.release()
 cv2.destroyAllWindows()
