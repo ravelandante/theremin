@@ -11,6 +11,9 @@ NOTE_OFF_CH1 = 0x80
 AFTERTOUCH_CH1 = 0xD0
 ALL_OFF_CH1 = 0xB1
 
+MAJOR_SCALE_INTERVALS = [2, 2, 1, 2, 2, 2, 1]
+NATURAL_MINOR_SCALE_INTERVALS = [2, 1, 2, 2, 1, 2, 2]
+
 midiout = rtmidi.MidiOut()
 available_ports = midiout.get_ports()
 
@@ -31,34 +34,31 @@ def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume:
         midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
     return corrected_note
 
-def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list) -> int:
+def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list, scale: list) -> int:
     base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
     # TODO: make finger bend margins relative to hand size
     finger_bent = {
         "index": -left_hand_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
         "middle": -left_hand_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.05,
-        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y< 0.05,
-        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y< 0.03,
+        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.05,
+        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
 
-    if finger_bent["index"]:
-        base_note += 2
-        if finger_bent["middle"]:
-            base_note += 2
-            if finger_bent["ring"]:
-                base_note += 1
-                if finger_bent["pinky"]:
-                    base_note += 2
-    else:
-        if finger_bent["pinky"]:
-            if finger_bent["ring"]:
-                if finger_bent["middle"]:
-                    base_note += 9
-                else:
-                    base_note += 11
-            else:
-                base_note += 12
+    scale_intervals = [
+        finger_bent["index"],
+        finger_bent["middle"],
+        finger_bent["ring"],
+        finger_bent["pinky"],
+        not finger_bent["index"] and finger_bent["middle"] and finger_bent["ring"] and finger_bent["pinky"],
+        not finger_bent["middle"] and finger_bent["ring"] and finger_bent["pinky"],
+        not finger_bent["ring"] and finger_bent["pinky"],
+    ]
+
+    for i, interval in enumerate(scale):
+        if not scale_intervals[i]:
+            break
+        base_note += interval
     
     return int(base_note)
 
@@ -142,7 +142,7 @@ with mp_hands.Hands(
             thumb_x = left_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
 
             if thumb_x < 0.06:
-                corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks)
+                corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks, MAJOR_SCALE_INTERVALS)
                 previous_corrected_note = send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
             else:
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
