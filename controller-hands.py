@@ -44,8 +44,8 @@ def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale:
     # TODO: make finger bend margins relative to hand size
     finger_bent = {
         "index": -right_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
-        "middle": -right_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.05,
-        "ring": -right_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.05,
+        "middle": -right_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.045,
+        "ring": -right_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.04,
         "pinky": -right_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
 
