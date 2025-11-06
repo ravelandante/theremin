@@ -11,6 +11,8 @@ NOTE_OFF_CH1 = 0x80
 AFTERTOUCH_CH1 = 0xD0
 ALL_OFF_CH1 = 0xB1
 
+NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
 MAJOR_SCALE_INTERVALS = [2, 2, 1, 2, 2, 2, 1]
 NATURAL_MINOR_SCALE_INTERVALS = [2, 1, 2, 2, 1, 2, 2]
 
@@ -95,12 +97,11 @@ def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int, fr
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 def draw_note_name(midi_note: int, frame):
-    note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     octave = (midi_note // 12) - 1
     note_index = midi_note % 12
 
     cv2.putText(frame, 
-        f'Note: {note_names[note_index]}{octave}', 
+        f'Note: {NOTE_NAMES[note_index]}{octave}', 
         (50, 50), 
         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
@@ -153,7 +154,7 @@ with mp_hands.Hands(
             if thumb_x < 0.06:
                 corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks, MAJOR_SCALE_INTERVALS)
                 send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
-                
+
                 previous_corrected_note = corrected_note
                 previous_clamped_volume = clamped_volume
                 draw_note_name(corrected_note, frame)
