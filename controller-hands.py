@@ -86,13 +86,22 @@ def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> li
     return [right_wrist_landmarks, left_wrist_landmarks]
 
 def draw_landmarks(multi_hand_landmarks: list, frame):
+    finger_tips = [
+        mp_hands.HandLandmark.THUMB_TIP,
+        mp_hands.HandLandmark.INDEX_FINGER_TIP,
+        mp_hands.HandLandmark.MIDDLE_FINGER_TIP,
+        mp_hands.HandLandmark.RING_FINGER_TIP,
+        mp_hands.HandLandmark.PINKY_TIP,
+    ]
+
     for hand_landmarks in multi_hand_landmarks:
-        mp_drawing.draw_landmarks(
-            frame,
-            hand_landmarks,
-            mp_hands.HAND_CONNECTIONS,
-            mp_drawing_styles.get_default_hand_landmarks_style(),
-            mp_drawing_styles.get_default_hand_connections_style())
+        for tip in finger_tips:
+            landmark = hand_landmarks.landmark[tip]
+            image_h, image_w, _ = frame.shape
+            pixel_x = int(landmark.x * image_w)
+            pixel_y = int(landmark.y * image_h)
+
+            cv2.circle(frame, (pixel_x, pixel_y), 8, (0, 255, 0), -1)
 
 def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int, frame):
     pixel_x = int(normal_x * image_w)
