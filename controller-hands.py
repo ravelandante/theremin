@@ -13,8 +13,9 @@ ALL_OFF_CH1 = 0xB1
 
 NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 
-MAJOR_SCALE_INTERVALS = [2, 2, 1, 2, 2, 2, 1]
-NATURAL_MINOR_SCALE_INTERVALS = [2, 1, 2, 2, 1, 2, 2]
+MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12]
+NATURAL_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12]
+HARMONIC_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 11, 12]
 
 midiout = rtmidi.MidiOut()
 available_ports = midiout.get_ports()
@@ -46,22 +47,26 @@ def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list, scale: l
         "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
 
-    scale_intervals = [
-        finger_bent["index"],
-        finger_bent["middle"],
-        finger_bent["ring"],
-        finger_bent["pinky"],
-        not finger_bent["index"] and finger_bent["middle"] and finger_bent["ring"] and finger_bent["pinky"],
-        not finger_bent["middle"] and finger_bent["ring"] and finger_bent["pinky"],
-        not finger_bent["ring"] and finger_bent["pinky"],
-    ]
+    scale_degree = 1
+    if finger_bent["index"]:
+        if finger_bent["pinky"] and finger_bent["ring"] and finger_bent["middle"]:
+            scale_degree = 5
+        elif finger_bent["ring"] and finger_bent["middle"]:
+            scale_degree = 4
+        elif finger_bent["middle"]:
+            scale_degree = 3
+        else:
+            scale_degree = 2
+    else:
+        if finger_bent["pinky"]:
+            if finger_bent["ring"] and finger_bent["middle"]:
+                scale_degree = 6
+            elif finger_bent["ring"]:
+                scale_degree = 7
+            else:
+                scale_degree = 8
 
-    for i, interval in enumerate(scale):
-        if not scale_intervals[i]:
-            break
-        base_note += interval
-    
-    return int(base_note)
+    return int(base_note + scale[scale_degree - 1])
 
 def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> list:
     right_wrist_landmarks = None
