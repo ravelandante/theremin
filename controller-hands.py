@@ -148,7 +148,8 @@ with mp_hands.Hands(
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
                 previous_corrected_note = 0
 
-        cv2.imshow('image', cv2.flip(frame, 1))
+        resized_frame = cv2.resize(cv2.flip(frame, 1), (1280, 720))
+        cv2.imshow('image', resized_frame)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
