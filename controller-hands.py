@@ -36,15 +36,15 @@ def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume:
     if previous_clamped_volume != normalised_volume:
         midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
 
-def get_corrected_note(clamped_pitch: float, left_hand_landmarks: list, scale: list) -> int:
+def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale: list) -> int:
     base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
     # TODO: make finger bend margins relative to hand size
     finger_bent = {
-        "index": -left_hand_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
-        "middle": -left_hand_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.05,
-        "ring": -left_hand_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.05,
-        "pinky": -left_hand_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
+        "index": -right_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
+        "middle": -right_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.05,
+        "ring": -right_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.05,
+        "pinky": -right_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
 
     scale_degree = 1
@@ -126,7 +126,7 @@ with mp_hands.Hands(
             print("unable to get webcam feed")
             continue
 
-        frame = cv2.resize(frame, (640, 360))
+        frame = cv2.flip(cv2.resize(frame, (640, 360)), 1)
         frame.flags.writeable = False
         image_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = hand_detector.process(image_to_detect)
@@ -150,14 +150,14 @@ with mp_hands.Hands(
                 draw_coords(right_wrist.x, right_wrist.y, image_w, image_h, frame)
                 draw_coords(left_wrist.x, left_wrist.y, image_w, image_h, frame)
 
-            clamped_pitch = max(0.0, min(1.0, left_wrist.y))
-            clamped_volume = max(0.0, min(1.0, right_wrist.y))
+            clamped_pitch = max(0.0, min(1.0, right_wrist.y))
+            clamped_volume = max(0.0, min(1.0, left_wrist.y))
 
-            left_wrist_landmarks = world_landmarks[1]
-            thumb_x = left_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
+            right_wrist_landmarks = world_landmarks[0]
+            thumb_x = right_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
 
-            if thumb_x < 0.06:
-                corrected_note = get_corrected_note(clamped_pitch, left_wrist_landmarks, MAJOR_SCALE_INTERVALS)
+            if thumb_x > -0.06:
+                corrected_note = get_corrected_note(clamped_pitch, right_wrist_landmarks, MAJOR_SCALE_INTERVALS)
                 send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
 
                 previous_corrected_note = corrected_note
@@ -167,7 +167,7 @@ with mp_hands.Hands(
                 midiout.send_message([ALL_OFF_CH1, 123, 0])
                 previous_corrected_note = 0
 
-        resized_frame = cv2.resize(cv2.flip(frame, 1), (1280, 720))
+        resized_frame = cv2.resize(frame, (1280, 720))
         cv2.imshow('image', resized_frame)
 
         key = cv2.waitKey(1) & 0xFF
