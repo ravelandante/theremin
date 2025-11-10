@@ -13,7 +13,7 @@ AFTERTOUCH_CH1 = 0xD0
 ALL_OFF_CH1 = 0xB1
 PITCH_BEND_CH1 = 0xE0
 
-NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12]
 NATURAL_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12]
@@ -28,7 +28,13 @@ else:
     print("opening virtual port")
     midiout.open_virtual_port("My virtual output")
 
-def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume: float, previous_clamped_volume: int):
+
+def send_midi(
+    corrected_note: int,
+    previous_corrected_note: int,
+    clamped_volume: float,
+    previous_clamped_volume: int,
+):
     normalised_volume = (1 - clamped_volume) * 127
 
     if previous_corrected_note != corrected_note:
@@ -38,13 +44,18 @@ def send_midi(corrected_note: int, previous_corrected_note: int, clamped_volume:
     if previous_clamped_volume != normalised_volume:
         midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
 
-def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale: list, active_fingers: list) -> int:
+
+def get_corrected_note(
+    clamped_pitch: float, right_wrist_landmarks: list, scale: list, active_fingers: list
+) -> int:
     base_note = round(1 - clamped_pitch, 1) * 10 + 60
 
     # TODO: make finger bend margins relative to hand size
     finger_bent = {
-        "index": -right_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y < 0.03,
-        "middle": -right_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y < 0.045,
+        "index": -right_wrist_landmarks[mp_hands.HandLandmark.INDEX_FINGER_TIP].y
+        < 0.03,
+        "middle": -right_wrist_landmarks[mp_hands.HandLandmark.MIDDLE_FINGER_TIP].y
+        < 0.045,
         "ring": -right_wrist_landmarks[mp_hands.HandLandmark.RING_FINGER_TIP].y < 0.04,
         "pinky": -right_wrist_landmarks[mp_hands.HandLandmark.PINKY_TIP].y < 0.03,
     }
@@ -75,6 +86,7 @@ def get_corrected_note(clamped_pitch: float, right_wrist_landmarks: list, scale:
 
     return [int(base_note + scale[scale_degree - 1]), active_fingers]
 
+
 def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> list:
     right_wrist_landmarks = None
     left_wrist_landmarks = None
@@ -87,10 +99,13 @@ def get_hand_landmarks(multi_hand_landmarks: list, multi_handedness: list) -> li
             right_wrist_landmarks = hand_landmark
         elif hand_label == "Left":
             left_wrist_landmarks = hand_landmark
-        
+
     return [right_wrist_landmarks, left_wrist_landmarks]
 
-def draw_landmarks(multi_hand_landmarks: list, frame, active_fingers: list, handedness: list):
+
+def draw_landmarks(
+    multi_hand_landmarks: list, frame, active_fingers: list, handedness: list
+):
     finger_tips = [
         mp_hands.HandLandmark.THUMB_TIP,
         mp_hands.HandLandmark.INDEX_FINGER_TIP,
@@ -110,25 +125,44 @@ def draw_landmarks(multi_hand_landmarks: list, frame, active_fingers: list, hand
             color = (0, 0, 255) if is_right_hand and active_fingers[i] else (0, 255, 0)
             cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
 
+
 def draw_coords(normal_x: float, normal_y: float, image_w: int, image_h: int, frame):
     pixel_x = int(normal_x * image_w)
     pixel_y = int(normal_y * image_h)
 
-    cv2.putText(frame, 
-        f'X:{round(normal_x, 2)} Y:{round(normal_y, 2)}', 
-        (pixel_x - 50, pixel_y - 20), 
-        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    cv2.putText(
+        frame,
+        f"X:{round(normal_x, 2)} Y:{round(normal_y, 2)}",
+        (pixel_x - 50, pixel_y - 20),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 255, 0),
+        2,
+    )
+
 
 def draw_note_name(midi_note: int, frame):
     octave = (midi_note // 12) - 1
     note_index = midi_note % 12
 
-    cv2.putText(frame, 
-        f'Note: {NOTE_NAMES[note_index]}{octave}', 
-        (50, 50), 
-        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.putText(
+        frame,
+        f"Note: {NOTE_NAMES[note_index]}{octave}",
+        (50, 50),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (0, 255, 0),
+        2,
+    )
 
-def calculate_and_send_pitch_bend(left_wrist_x: float, previous_left_wrist_x: float, current_time: float, previous_time: float, pitch_bend_range: int):
+
+def calculate_and_send_pitch_bend(
+    left_wrist_x: float,
+    previous_left_wrist_x: float,
+    current_time: float,
+    previous_time: float,
+    pitch_bend_range: int,
+):
     if previous_left_wrist_x is not None and previous_time is not None:
         delta_x = left_wrist_x - previous_left_wrist_x
         delta_time = current_time - previous_time
@@ -136,13 +170,15 @@ def calculate_and_send_pitch_bend(left_wrist_x: float, previous_left_wrist_x: fl
         pitch_bend_amount = int(pitch_bend_range + ((delta_x) / delta_time) * 4096)
         pitch_bend_amount = max(0, min(16383, pitch_bend_amount))
 
-        midiout.send_message([PITCH_BEND_CH1, pitch_bend_amount & 0x7F, (pitch_bend_amount >> 7) & 0x7F])
+        midiout.send_message(
+            [PITCH_BEND_CH1, pitch_bend_amount & 0x7F, (pitch_bend_amount >> 7) & 0x7F]
+        )
+
 
 cap = cv2.VideoCapture(0)
 with mp_hands.Hands(
-    model_complexity=0,
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5) as hand_detector:
+    model_complexity=0, min_detection_confidence=0.5, min_tracking_confidence=0.5
+) as hand_detector:
 
     previous_corrected_note = 0
     previous_clamped_volume = 0
@@ -166,12 +202,24 @@ with mp_hands.Hands(
         frame.flags.writeable = True
 
         if draw_landmarks_enabled and results.multi_hand_landmarks:
-            draw_landmarks(results.multi_hand_landmarks, frame, active_fingers, results.multi_handedness)
+            draw_landmarks(
+                results.multi_hand_landmarks,
+                frame,
+                active_fingers,
+                results.multi_handedness,
+            )
 
-        if results.multi_hand_world_landmarks and len(results.multi_hand_world_landmarks) == 2:
-            world_landmarks = get_hand_landmarks(results.multi_hand_world_landmarks, results.multi_handedness)
-            image_landmarks = get_hand_landmarks(results.multi_hand_landmarks, results.multi_handedness)
-                
+        if (
+            results.multi_hand_world_landmarks
+            and len(results.multi_hand_world_landmarks) == 2
+        ):
+            world_landmarks = get_hand_landmarks(
+                results.multi_hand_world_landmarks, results.multi_handedness
+            )
+            image_landmarks = get_hand_landmarks(
+                results.multi_hand_landmarks, results.multi_handedness
+            )
+
             if not image_landmarks[0] or not image_landmarks[1]:
                 continue
 
@@ -190,7 +238,13 @@ with mp_hands.Hands(
             thumb_x = right_wrist_landmarks[mp_hands.HandLandmark.THUMB_TIP].x
 
             current_time = time.time()
-            calculate_and_send_pitch_bend(left_wrist.x, previous_left_wrist_x, current_time, previous_time, pitch_bend_range)
+            calculate_and_send_pitch_bend(
+                left_wrist.x,
+                previous_left_wrist_x,
+                current_time,
+                previous_time,
+                pitch_bend_range,
+            )
 
             previous_left_wrist_x = left_wrist.x
             previous_time = current_time
@@ -198,8 +252,18 @@ with mp_hands.Hands(
             if thumb_x > -0.06:
                 active_fingers[0] = True
 
-                corrected_note, active_fingers = get_corrected_note(clamped_pitch, right_wrist_landmarks, MAJOR_SCALE_INTERVALS, active_fingers)
-                send_midi(corrected_note, previous_corrected_note, clamped_volume, previous_clamped_volume)
+                corrected_note, active_fingers = get_corrected_note(
+                    clamped_pitch,
+                    right_wrist_landmarks,
+                    MAJOR_SCALE_INTERVALS,
+                    active_fingers,
+                )
+                send_midi(
+                    corrected_note,
+                    previous_corrected_note,
+                    clamped_volume,
+                    previous_clamped_volume,
+                )
 
                 previous_corrected_note = corrected_note
                 previous_clamped_volume = clamped_volume
@@ -210,12 +274,12 @@ with mp_hands.Hands(
                 previous_corrected_note = 0
 
         resized_frame = cv2.resize(frame, (1280, 720))
-        cv2.imshow('image', resized_frame)
+        cv2.imshow("image", resized_frame)
 
         key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
+        if key == ord("q"):
             break
-        elif key == ord('d'):
+        elif key == ord("d"):
             draw_landmarks_enabled = not draw_landmarks_enabled
 
 cap.release()
