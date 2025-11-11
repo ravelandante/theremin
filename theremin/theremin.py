@@ -55,7 +55,7 @@ class Theremin:
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
-        self.vision.draw_volume(1 - clamped_volume, final_frame)
+        self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist)
 
     def main_loop(self):
         try:

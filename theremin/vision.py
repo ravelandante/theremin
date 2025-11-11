@@ -64,8 +64,6 @@ class Vision:
                     (wrist_pixel_x, wrist_pixel_y),
                     (10, wrist_pixel_y),
                     (0, 255, 0),
-                    1,
-                )
 
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
@@ -86,8 +84,12 @@ class Vision:
         circle_y = int((1 - volume) * image_h)
         circle_x = 20
 
-        cv2.line(frame, (circle_x, 0), (circle_x, image_h), (0, 255, 0), 2)
+        cv2.line(
         cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
+
+            (0, 255, 0),
+            1,
+        )
 
         cv2.putText(
             frame,
