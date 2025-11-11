@@ -79,7 +79,7 @@ class Vision:
             2,
         )
 
-    def draw_volume(self, volume: float, frame: np.ndarray):
+    def draw_volume(self, volume: float, frame: np.ndarray, left_wrist):
         image_h, _, _ = frame.shape
         circle_y = int((1 - volume) * image_h)
         circle_x = 20
@@ -87,6 +87,12 @@ class Vision:
         cv2.line(
         cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
 
+        left_wrist_x = int(left_wrist.x * frame.shape[1])
+        left_wrist_y = int(left_wrist.y * frame.shape[0])
+        cv2.line(
+            frame,
+            (left_wrist_x, left_wrist_y),
+            (10, left_wrist_y),
             (0, 255, 0),
             1,
         )
