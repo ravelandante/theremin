@@ -3,6 +3,7 @@
 ## TODO
 
 -   make finger bend thresholds relative to hand size
+-   draw everything after resizing image 2nd time
 -   make ok gesture recognition more robust (use finger distances)
 -   limit volume control to a smaller y range on the image
 -   make right hand y control octave instead of note (maybe)
