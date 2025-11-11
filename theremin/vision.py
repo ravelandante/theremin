@@ -58,12 +58,6 @@ class Vision:
             wrist_pixel_x = int(hand.wrist.x * image_w)
             wrist_pixel_y = int(hand.wrist.y * image_h)
             cv2.circle(frame, (wrist_pixel_x, wrist_pixel_y), 8, (255, 0, 0), -1)
-            if hand.handedness == "Left":
-                cv2.line(
-                    frame,
-                    (wrist_pixel_x, wrist_pixel_y),
-                    (10, wrist_pixel_y),
-                    (0, 255, 0),
 
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
