@@ -85,6 +85,17 @@ class Vision:
             2,
         )
 
+    def draw_volume(self, volume: float, frame: np.ndarray):
+        cv2.putText(
+            frame,
+            f"Volume: {volume:.2f}",
+            (50, 80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (0, 255, 0),
+            2,
+        )
+
     def get_video(
         self, hand_detector, frame: np.ndarray, draw_landmarks_enabled: bool
     ) -> np.ndarray:
