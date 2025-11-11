@@ -1,15 +1,16 @@
 import mediapipe as mp
+from typing import List
 
 from finger import Finger
 
 
 class Hand:
-    def __init__(self, handedness, world_landmarks, image_landmarks):
+    def __init__(self, handedness: str, world_landmarks, image_landmarks):
         self.mp_hands = mp.solutions.hands
 
         self.handedness = handedness
 
-        self.finger_tips = [
+        self.finger_tips: List[Finger] = [
             Finger(
                 "thumb",
                 image_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],

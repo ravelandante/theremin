@@ -1,4 +1,5 @@
 import rtmidi
+from hand import Hand
 
 NOTE_ON_CH1 = 0x90
 NOTE_OFF_CH1 = 0x80
@@ -41,7 +42,7 @@ class MidiController:
     def get_corrected_note(
         self,
         clamped_pitch: float,
-        right_hand,
+        right_hand: Hand,
     ) -> int:
         base_note = round(1 - clamped_pitch, 1) * 10 + 60
         scale_degree = 1

@@ -1,5 +1,7 @@
 import cv2
 import mediapipe as mp
+import numpy as np
+from typing import List
 
 from hand import Hand
 
@@ -23,7 +25,7 @@ class Vision:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
-        self.hands = []
+        self.hands: List[Hand] = []
 
     def get_hand_landmarks(
         self,
@@ -31,7 +33,7 @@ class Vision:
         multi_hand_landmarks: list,
         multi_handedness: list,
     ) -> list:
-        hands = []
+        hands: List[Hand] = []
 
         for i, hand_landmarks in enumerate(multi_hand_world_landmarks):
             hand_label = multi_handedness[i].classification[0].label
@@ -43,7 +45,7 @@ class Vision:
 
     def draw_landmarks(
         self,
-        frame,
+        frame: np.ndarray,
     ):
         image_h, image_w, _ = frame.shape
         for hand in self.hands:
@@ -59,7 +61,7 @@ class Vision:
                 )
                 cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
 
-    def draw_coords(self, normal_x: float, normal_y: float, frame):
+    def draw_coords(self, normal_x: float, normal_y: float, frame: np.ndarray):
         image_h, image_w, _ = frame.shape
         pixel_x = int(normal_x * image_w)
         pixel_y = int(normal_y * image_h)
@@ -74,7 +76,7 @@ class Vision:
             2,
         )
 
-    def draw_note_name(self, midi_note: int, frame):
+    def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
         note_index = midi_note % 12
 
@@ -88,7 +90,9 @@ class Vision:
             2,
         )
 
-    def get_video(self, hand_detector, frame, draw_landmarks_enabled):
+    def get_video(
+        self, hand_detector, frame: np.ndarray, draw_landmarks_enabled: bool
+    ) -> np.ndarray:
         frame = cv2.flip(cv2.resize(frame, (640, 360)), 1)
         frame.flags.writeable = False
         image_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
