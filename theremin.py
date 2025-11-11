@@ -16,7 +16,7 @@ class Theremin:
         self.previous_clamped_volume = 0
         self.draw_landmarks_enabled = True
 
-        self.previous_left_wrist_x = None
+        self.previous_left_thumb_x = None
         self.previous_time = None
 
     def main_loop(self):
@@ -55,14 +55,14 @@ class Theremin:
 
                         current_time = time.time()
                         self.controller.calculate_and_send_pitch_bend(
-                            left_hand.wrist.x,
-                            self.previous_left_wrist_x,
+                            left_hand.finger_tips[0].x if left_hand.is_ok_hand() else 0,
+                            self.previous_left_thumb_x if left_hand.is_ok_hand() else 0,
                             current_time,
                             self.previous_time,
                             self.PITCH_BEND_RANGE,
                         )
 
-                        self.previous_left_wrist_x = left_hand.wrist.x
+                        self.previous_left_thumb_x = left_hand.finger_tips[0].x
                         self.previous_time = current_time
 
                         if right_hand.finger_tips[0].is_finger_bent():

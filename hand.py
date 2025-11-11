@@ -38,3 +38,13 @@ class Hand:
         ]
 
         self.wrist = image_landmarks[self.mp_hands.HandLandmark.WRIST]
+
+    def is_ok_hand(self) -> bool:
+        # TODO: make this more robust by using distances between landmarks
+        return (
+            self.finger_tips[0].is_finger_bent()
+            and self.finger_tips[1].is_finger_bent()
+            and not self.finger_tips[2].is_finger_bent()
+            and not self.finger_tips[3].is_finger_bent()
+            and not self.finger_tips[4].is_finger_bent()
+        )
