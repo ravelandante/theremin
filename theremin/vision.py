@@ -74,12 +74,19 @@ class Vision:
         )
 
     def draw_volume(self, volume: float, frame: np.ndarray):
+        image_h, _, _ = frame.shape
+        circle_y = int((1 - volume) * image_h)
+        circle_x = 20
+
+        cv2.line(frame, (circle_x, 0), (circle_x, image_h), (0, 255, 0), 2)
+        cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
+
         cv2.putText(
             frame,
-            f"Volume: {volume:.2f}",
-            (50, 80),
+            f"{volume:.2f}",
+            (circle_x + 10, circle_y + 6),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
+            0.6,
             (0, 255, 0),
             2,
         )
