@@ -7,7 +7,7 @@ from hand import Hand
 
 
 class Vision:
-    def __init__(self):
+    def __init__(self, volume_pixel_max: int, volume_pixel_min: int):
         self.NOTE_NAMES = [
             "C",
             "C#",
@@ -24,6 +24,9 @@ class Vision:
         ]
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
+
+        self.volume_pixel_max = volume_pixel_max
+        self.volume_pixel_min = volume_pixel_min
 
         self.hands: List[Hand] = []
 
@@ -73,20 +76,28 @@ class Vision:
             2,
         )
 
-    def draw_volume(self, volume: float, frame: np.ndarray, left_wrist):
-        image_h, _, _ = frame.shape
-        circle_y = int((1 - volume) * image_h)
+    def draw_volume(self, volume: float, frame: np.ndarray, left_wrist_x: float):
+        image_h, image_w, _ = frame.shape
+        circle_y = max(
+            self.volume_pixel_max,
+            min(int((1 - volume) * image_h), image_h - self.volume_pixel_min),
+        )
         circle_x = 20
 
         cv2.line(
+            frame,
+            (circle_x, self.volume_pixel_max),
+            (circle_x, image_h - self.volume_pixel_min),
+            (0, 255, 0),
+            2,
+        )
         cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
 
-        left_wrist_x = int(left_wrist.x * frame.shape[1])
-        left_wrist_y = int(left_wrist.y * frame.shape[0])
+        left_wrist_pixel_x = int(left_wrist_x * image_w)
         cv2.line(
             frame,
-            (left_wrist_x, left_wrist_y),
-            (10, left_wrist_y),
+            (left_wrist_pixel_x, circle_y),
+            (10, circle_y),
             (0, 255, 0),
             1,
         )
