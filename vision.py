@@ -49,16 +49,11 @@ class Vision:
     ):
         image_h, image_w, _ = frame.shape
         for hand in self.hands:
-            is_right_hand = hand.handedness == "Right"
             for finger_tip in hand.finger_tips:
                 pixel_x = int(finger_tip.x * image_w)
                 pixel_y = int(finger_tip.y * image_h)
 
-                color = (
-                    (0, 0, 255)
-                    if is_right_hand and finger_tip.is_finger_bent()
-                    else (0, 255, 0)
-                )
+                color = (0, 0, 255) if finger_tip.is_finger_bent() else (0, 255, 0)
                 cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
 
     def draw_coords(self, normal_x: float, normal_y: float, frame: np.ndarray):
