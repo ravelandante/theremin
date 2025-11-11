@@ -6,14 +6,14 @@ from midi_controller import MidiController
 from vision import Vision
 from hand import Hand
 
-VOLUME_PIXEL_BOUNDS = (100, 50)
+VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 
 
 class Theremin:
     def __init__(self):
         self.mp_hands = mp.solutions.hands
         self.controller = MidiController()
-        self.vision = Vision(VOLUME_PIXEL_BOUNDS[0], VOLUME_PIXEL_BOUNDS[1])
+        self.vision = Vision(VOLUME_RATIO_BOUNDS[0], VOLUME_RATIO_BOUNDS[1])
         self.PITCH_BEND_RANGE = 8192
 
         self.previous_corrected_note = 0

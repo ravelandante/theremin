@@ -7,7 +7,7 @@ from hand import Hand
 
 
 class Vision:
-    def __init__(self, volume_pixel_max: int, volume_pixel_min: int):
+    def __init__(self, volume_ratio_max: int, volume_ratio_min: int):
         self.NOTE_NAMES = [
             "C",
             "C#",
@@ -25,8 +25,8 @@ class Vision:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
 
-        self.volume_pixel_max = volume_pixel_max
-        self.volume_pixel_min = volume_pixel_min
+        self.volume_ratio_max = volume_ratio_max
+        self.volume_ratio_min = volume_ratio_min
 
         self.hands: List[Hand] = []
 
@@ -78,16 +78,18 @@ class Vision:
 
     def draw_volume(self, volume: float, frame: np.ndarray, left_wrist_x: float):
         image_h, image_w, _ = frame.shape
+        volume_pixel_max = int(self.volume_ratio_max * image_h)
+        volume_pixel_min = int(self.volume_ratio_min * image_h)
         circle_y = max(
-            self.volume_pixel_max,
-            min(int((1 - volume) * image_h), image_h - self.volume_pixel_min),
+            volume_pixel_max,
+            min(int((1 - volume) * image_h), image_h - volume_pixel_min),
         )
         circle_x = 20
 
         cv2.line(
             frame,
-            (circle_x, self.volume_pixel_max),
-            (circle_x, image_h - self.volume_pixel_min),
+            (circle_x, volume_pixel_max),
+            (circle_x, image_h - volume_pixel_min),
             (0, 255, 0),
             2,
         )
