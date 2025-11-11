@@ -1,8 +1,10 @@
 import cv2
 import mediapipe as mp
 import time
+import numpy as np
 from midi_controller import MidiController
 from vision import Vision
+from hand import Hand
 
 
 class Theremin:
@@ -18,6 +20,41 @@ class Theremin:
 
         self.previous_left_thumb_x = None
         self.previous_time = None
+
+    def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
+        clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
+        clamped_volume = max(0.0, min(1.0, left_hand.wrist.y))
+
+        current_time = time.time()
+        self.controller.calculate_and_send_pitch_bend(
+            (left_hand.finger_tips[0].x if left_hand.is_ok_hand() else 0),
+            (self.previous_left_thumb_x if left_hand.is_ok_hand() else 0),
+            current_time,
+            self.previous_time,
+            self.PITCH_BEND_RANGE,
+        )
+
+        self.previous_left_thumb_x = left_hand.finger_tips[0].x
+        self.previous_time = current_time
+
+        if right_hand.finger_tips[0].is_finger_bent():
+            corrected_note = self.controller.get_corrected_note(
+                clamped_pitch,
+                right_hand,
+            )
+            self.controller.send_midi(
+                corrected_note,
+                self.previous_corrected_note,
+                clamped_volume,
+                self.previous_clamped_volume,
+            )
+
+            self.previous_corrected_note = corrected_note
+            self.previous_clamped_volume = clamped_volume
+            self.vision.draw_note_name(corrected_note, final_frame)
+        else:
+            self.controller.stop_midi()
+            self.previous_corrected_note = 0
 
     def main_loop(self):
         try:
@@ -54,48 +91,7 @@ class Theremin:
                             ),
                             None,
                         ):
-
-                            clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
-                            clamped_volume = max(0.0, min(1.0, left_hand.wrist.y))
-
-                            current_time = time.time()
-                            self.controller.calculate_and_send_pitch_bend(
-                                (
-                                    left_hand.finger_tips[0].x
-                                    if left_hand.is_ok_hand()
-                                    else 0
-                                ),
-                                (
-                                    self.previous_left_thumb_x
-                                    if left_hand.is_ok_hand()
-                                    else 0
-                                ),
-                                current_time,
-                                self.previous_time,
-                                self.PITCH_BEND_RANGE,
-                            )
-
-                            self.previous_left_thumb_x = left_hand.finger_tips[0].x
-                            self.previous_time = current_time
-
-                            if right_hand.finger_tips[0].is_finger_bent():
-                                corrected_note = self.controller.get_corrected_note(
-                                    clamped_pitch,
-                                    right_hand,
-                                )
-                                self.controller.send_midi(
-                                    corrected_note,
-                                    self.previous_corrected_note,
-                                    clamped_volume,
-                                    self.previous_clamped_volume,
-                                )
-
-                                self.previous_corrected_note = corrected_note
-                                self.previous_clamped_volume = clamped_volume
-                                self.vision.draw_note_name(corrected_note, final_frame)
-                            else:
-                                self.controller.stop_midi()
-                                self.previous_corrected_note = 0
+                            self.perform(right_hand, left_hand, final_frame)
 
                     cv2.imshow("image", final_frame)
 
