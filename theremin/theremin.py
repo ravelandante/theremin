@@ -24,8 +24,13 @@ class Theremin:
         self.previous_time = None
 
     def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
+        volume_min = VOLUME_RATIO_BOUNDS[0]
+        volume_max = 1.0 - VOLUME_RATIO_BOUNDS[1]
+
+        clamped_volume = max(
+            0.0, min(1.0, (left_hand.wrist.y - volume_min) / (volume_max - volume_min))
+        )
         clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
-        clamped_volume = max(0.0, min(1.0, left_hand.wrist.y))
 
         current_time = time.time()
         self.controller.calculate_and_send_pitch_bend(

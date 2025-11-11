@@ -80,9 +80,10 @@ class Vision:
         image_h, image_w, _ = frame.shape
         volume_pixel_max = int(self.volume_ratio_max * image_h)
         volume_pixel_min = int(self.volume_ratio_min * image_h)
-        circle_y = max(
-            volume_pixel_max,
-            min(int((1 - volume) * image_h), image_h - volume_pixel_min),
+        circle_y = int(
+            image_h
+            - volume_pixel_min
+            - (volume * (image_h - volume_pixel_min - volume_pixel_max))
         )
         circle_x = 20
 
