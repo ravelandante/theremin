@@ -56,21 +56,6 @@ class Vision:
                 color = (0, 0, 255) if finger_tip.is_finger_bent() else (0, 255, 0)
                 cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
 
-    def draw_coords(self, normal_x: float, normal_y: float, frame: np.ndarray):
-        image_h, image_w, _ = frame.shape
-        pixel_x = int(normal_x * image_w)
-        pixel_y = int(normal_y * image_h)
-
-        cv2.putText(
-            frame,
-            f"X:{round(normal_x, 2)} Y:{round(normal_y, 2)}",
-            (pixel_x - 50, pixel_y - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            2,
-        )
-
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
         note_index = midi_note % 12
@@ -118,23 +103,6 @@ class Vision:
                 self.draw_landmarks(
                     frame,
                 )
-                if right_hand := next(
-                    (hand for hand in self.hands if hand.handedness == "Right"), None
-                ):
-                    self.draw_coords(
-                        right_hand.wrist.x,
-                        right_hand.wrist.y,
-                        frame,
-                    )
-
-                if left_hand := next(
-                    (hand for hand in self.hands if hand.handedness == "Left"), None
-                ):
-                    self.draw_coords(
-                        left_hand.wrist.x,
-                        left_hand.wrist.y,
-                        frame,
-                    )
 
         resized_frame = cv2.resize(frame, (1280, 720))
         return resized_frame
