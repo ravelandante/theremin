@@ -9,3 +9,5 @@
 -   refactor to use finger enum instead of indices
 -   add polyphonic mode where left hand controls a separate pitch
 -   add more controls for the left fingers (maybe with gestures)
+-   add GH demo
+-   host?
