@@ -13,7 +13,7 @@ class Finger:
     def is_finger_bent(self) -> bool:
         # TODO: make finger bend margins relative to hand size
         if self.finger_type == "thumb":
-            return -self.world_x < 0.06
+            return abs(self.world_x) < 0.06
 
         bend_thresholds = {
             "index": 0.03,
