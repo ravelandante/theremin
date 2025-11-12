@@ -140,5 +140,6 @@ class Theremin:
             self.controller.midiout.close_port()
 
 
-theremin = Theremin()
-theremin.main_loop()
+if __name__ == "__main__":
+    theremin = Theremin()
+    theremin.main_loop()
