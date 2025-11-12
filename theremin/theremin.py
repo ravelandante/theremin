@@ -8,6 +8,15 @@ from hand import Hand
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 
+POSSIBLE_SCALES = [
+    ("Major", [0, 2, 4, 5, 7, 9, 11, 12]),
+    ("Natural minor", [0, 2, 3, 5, 7, 8, 10, 12]),
+    ("Harmonic minor", [0, 2, 3, 5, 7, 8, 11, 12]),
+    ("Pentatonic", [0, 2, 4, 7, 9, 12, 14, 16]),
+    ("Major blues", [0, 2, 3, 4, 7, 9, 12, 14]),
+    ("Minor blues", [0, 3, 5, 6, 7, 10, 12, 15]),
+]
+
 
 class Theremin:
     def __init__(self):
@@ -15,6 +24,7 @@ class Theremin:
         self.controller = MidiController()
         self.vision = Vision(VOLUME_RATIO_BOUNDS[0], VOLUME_RATIO_BOUNDS[1])
         self.PITCH_BEND_RANGE = 8192
+        self.scale = POSSIBLE_SCALES[0]
 
         self.previous_corrected_note = 0
         self.previous_clamped_volume = 0
@@ -22,6 +32,18 @@ class Theremin:
 
         self.previous_left_thumb_x = None
         self.previous_time = None
+
+    def cycle_scale(self):
+        current_scale_index = next(
+            (
+                i
+                for i, (scale_name, _) in enumerate(POSSIBLE_SCALES)
+                if scale_name == self.scale[0]
+            ),
+            0,
+        )
+        next_scale_index = (current_scale_index + 1) % len(POSSIBLE_SCALES)
+        self.scale = POSSIBLE_SCALES[next_scale_index]
 
     def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
         volume_min = VOLUME_RATIO_BOUNDS[0]
@@ -46,8 +68,7 @@ class Theremin:
 
         if right_hand.finger_tips[0].is_finger_bent():
             corrected_note = self.controller.get_corrected_note(
-                clamped_pitch,
-                right_hand,
+                clamped_pitch, right_hand, self.scale[1]
             )
             self.controller.play_note(
                 corrected_note,
@@ -109,6 +130,9 @@ class Theremin:
                         break
                     elif key == ord("d"):
                         self.draw_landmarks_enabled = not self.draw_landmarks_enabled
+                    elif key == ord("s"):
+                        self.cycle_scale()
+
         finally:
             cap.release()
             cv2.destroyAllWindows()

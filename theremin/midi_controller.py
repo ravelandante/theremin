@@ -1,15 +1,12 @@
 import rtmidi
 from hand import Hand
+from typing import List
 
 NOTE_ON = 0x90
 NOTE_OFF = 0x80
 AFTERTOUCH = 0xD0
 ALL_OFF = 0xB0
 PITCH_BEND = 0xE0
-
-MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12]
-NATURAL_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12]
-HARMONIC_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 11, 12]
 
 
 class MidiController:
@@ -50,9 +47,7 @@ class MidiController:
             self.send_midi(AFTERTOUCH, 1, normalised_volume, 0)
 
     def get_corrected_note(
-        self,
-        clamped_pitch: float,
-        right_hand: Hand,
+        self, clamped_pitch: float, right_hand: Hand, scale: List[int]
     ) -> int:
         base_note = round(1 - clamped_pitch, 1) * 10 + 60
         scale_degree = 1
@@ -82,7 +77,7 @@ class MidiController:
                 else:
                     scale_degree = 8
 
-        return int(base_note + MAJOR_SCALE_INTERVALS[scale_degree - 1])
+        return int(base_note + scale[scale_degree - 1])
 
     def calculate_and_send_pitch_bend(
         self,
