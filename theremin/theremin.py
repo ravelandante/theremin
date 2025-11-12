@@ -127,7 +127,7 @@ class Theremin:
                         ):
                             self.perform(right_hand, left_hand, final_frame)
 
-                    cv2.imshow("image", final_frame)
+                    cv2.imshow("Theremin", final_frame)
 
                     key = cv2.waitKey(1) & 0xFF
                     if key == ord("q"):
