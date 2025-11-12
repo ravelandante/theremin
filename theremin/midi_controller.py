@@ -51,12 +51,12 @@ class MidiController:
     ) -> int:
         base_note = round(1 - clamped_pitch, 1) * 10 + 60
         scale_degree = 1
-        finger_tips = right_hand.finger_tips
+        fingers = right_hand.fingers
         finger_bent = {
-            "index": finger_tips[1].is_finger_bent(),
-            "middle": finger_tips[2].is_finger_bent(),
-            "ring": finger_tips[3].is_finger_bent(),
-            "pinky": finger_tips[4].is_finger_bent(),
+            "index": fingers[1].is_finger_bent(),
+            "middle": fingers[2].is_finger_bent(),
+            "ring": fingers[3].is_finger_bent(),
+            "pinky": fingers[4].is_finger_bent(),
         }
 
         if finger_bent["index"]:

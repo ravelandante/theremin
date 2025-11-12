@@ -10,7 +10,7 @@ class Hand:
 
         self.handedness = handedness
 
-        self.finger_tips: List[Finger] = [
+        self.fingers: List[Finger] = [
             Finger(
                 "thumb",
                 image_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],
@@ -48,9 +48,9 @@ class Hand:
     def is_ok_hand(self) -> bool:
         # TODO: make this more robust by using distances between landmarks
         return (
-            self.finger_tips[0].is_finger_bent()
-            and self.finger_tips[1].is_finger_bent()
-            and not self.finger_tips[2].is_finger_bent()
-            and not self.finger_tips[3].is_finger_bent()
-            and not self.finger_tips[4].is_finger_bent()
+            self.fingers[0].is_finger_bent()
+            and self.fingers[1].is_finger_bent()
+            and not self.fingers[2].is_finger_bent()
+            and not self.fingers[3].is_finger_bent()
+            and not self.fingers[4].is_finger_bent()
         )

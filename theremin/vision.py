@@ -52,11 +52,11 @@ class Vision:
     ):
         image_h, image_w, _ = frame.shape
         for hand in self.hands:
-            for finger_tip in hand.finger_tips:
-                pixel_x = int(finger_tip.x * image_w)
-                pixel_y = int(finger_tip.y * image_h)
+            for finger in hand.fingers:
+                pixel_x = int(finger.tip_x * image_w)
+                pixel_y = int(finger.tip_y * image_h)
 
-                color = (0, 0, 255) if finger_tip.is_finger_bent() else (0, 255, 0)
+                color = (0, 0, 255) if finger.is_finger_bent() else (0, 255, 0)
                 cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
             wrist_pixel_x = int(hand.wrist.x * image_w)
             wrist_pixel_y = int(hand.wrist.y * image_h)
