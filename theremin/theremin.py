@@ -80,6 +80,7 @@ class Theremin:
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
             self.vision.draw_note_name(corrected_note, final_frame)
+            self.vision.draw_scale_name(self.scale[0], final_frame)
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0

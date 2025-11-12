@@ -76,6 +76,17 @@ class Vision:
             2,
         )
 
+    def draw_scale_name(self, scale_name: str, frame: np.ndarray):
+        cv2.putText(
+            frame,
+            f"Scale: {scale_name}",
+            (50, 100),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (0, 255, 0),
+            2,
+        )
+
     def draw_volume(self, volume: float, frame: np.ndarray, left_wrist_x: float):
         image_h, image_w, _ = frame.shape
         volume_pixel_max = int(self.volume_ratio_max * image_h)
