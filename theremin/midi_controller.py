@@ -1,12 +1,14 @@
 import rtmidi
 from hand import Hand
 from typing import List
-
-NOTE_ON = 0x90
-NOTE_OFF = 0x80
-AFTERTOUCH = 0xD0
-ALL_OFF = 0xB0
-PITCH_BEND = 0xE0
+from rtmidi.midiconstants import (
+    NOTE_ON,
+    NOTE_OFF,
+    CHANNEL_AFTERTOUCH,
+    CONTROL_CHANGE,
+    PITCH_BEND,
+    ALL_NOTES_OFF,
+)
 
 
 class MidiController:
@@ -44,7 +46,7 @@ class MidiController:
             self.send_midi(NOTE_OFF, 1, previous_corrected_note, 0)
 
         if previous_clamped_volume != normalised_volume:
-            self.send_midi(AFTERTOUCH, 1, normalised_volume, 0)
+            self.send_midi(CHANNEL_AFTERTOUCH, 1, normalised_volume, 0)
 
     def get_corrected_note(
         self, clamped_pitch: float, right_hand: Hand, scale: List[int]
@@ -102,4 +104,4 @@ class MidiController:
             )
 
     def stop_midi(self):
-        self.send_midi(ALL_OFF, 1, 123, 0)
+        self.send_midi(CONTROL_CHANGE, 1, ALL_NOTES_OFF, 0)
