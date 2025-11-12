@@ -1,11 +1,11 @@
 import rtmidi
 from hand import Hand
 
-NOTE_ON_CH1 = 0x90
-NOTE_OFF_CH1 = 0x80
-AFTERTOUCH_CH1 = 0xD0
-ALL_OFF_CH1 = 0xB0
-PITCH_BEND_CH1 = 0xE0
+NOTE_ON = 0x90
+NOTE_OFF = 0x80
+AFTERTOUCH = 0xD0
+ALL_OFF = 0xB0
+PITCH_BEND = 0xE0
 
 MAJOR_SCALE_INTERVALS = [0, 2, 4, 5, 7, 9, 11, 12]
 NATURAL_MINOR_SCALE_INTERVALS = [0, 2, 3, 5, 7, 8, 10, 12]
@@ -25,6 +25,16 @@ class MidiController:
 
     def send_midi(
         self,
+        status: int,
+        channel: int,
+        first_byte: int,
+        second_byte: int,
+    ):
+        status_byte = status | (channel - 1)
+        self.midiout.send_message([status_byte, first_byte, second_byte])
+
+    def play_note(
+        self,
         corrected_note: int,
         previous_corrected_note: int,
         clamped_volume: float,
@@ -33,11 +43,11 @@ class MidiController:
         normalised_volume = (1 - clamped_volume) * 127
 
         if previous_corrected_note != corrected_note:
-            self.midiout.send_message([NOTE_ON_CH1, corrected_note, normalised_volume])
-            self.midiout.send_message([NOTE_OFF_CH1, previous_corrected_note, 0])
+            self.send_midi(NOTE_ON, 1, corrected_note, normalised_volume)
+            self.send_midi(NOTE_OFF, 1, previous_corrected_note, 0)
 
         if previous_clamped_volume != normalised_volume:
-            self.midiout.send_message([AFTERTOUCH_CH1, normalised_volume])
+            self.send_midi(AFTERTOUCH, 1, normalised_volume, 0)
 
     def get_corrected_note(
         self,
@@ -89,13 +99,12 @@ class MidiController:
             pitch_bend_amount = int(pitch_bend_range + ((delta_x) / delta_time) * 4096)
             pitch_bend_amount = max(0, min(16383, pitch_bend_amount))
 
-            self.midiout.send_message(
-                [
-                    PITCH_BEND_CH1,
-                    pitch_bend_amount & 0x7F,
-                    (pitch_bend_amount >> 7) & 0x7F,
-                ]
+            self.send_midi(
+                PITCH_BEND,
+                1,
+                pitch_bend_amount & 0x7F,
+                (pitch_bend_amount >> 7) & 0x7F,
             )
 
     def stop_midi(self):
-        self.midiout.send_message([ALL_OFF_CH1, 123, 0])
+        self.send_midi(ALL_OFF, 1, 123, 0)

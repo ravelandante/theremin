@@ -49,7 +49,7 @@ class Theremin:
                 clamped_pitch,
                 right_hand,
             )
-            self.controller.send_midi(
+            self.controller.play_note(
                 corrected_note,
                 self.previous_corrected_note,
                 clamped_volume,
