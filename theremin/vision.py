@@ -35,7 +35,7 @@ class Vision:
         multi_hand_world_landmarks: list,
         multi_hand_landmarks: list,
         multi_handedness: list,
-    ) -> list:
+    ) -> List[Hand]:
         hands: List[Hand] = []
 
         for i, hand_landmarks in enumerate(multi_hand_world_landmarks):
