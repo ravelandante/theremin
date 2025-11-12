@@ -15,26 +15,31 @@ class Hand:
                 "thumb",
                 image_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],
+                world_landmarks[self.mp_hands.HandLandmark.THUMB_IP],
             ),
             Finger(
                 "index",
                 image_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
+                world_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_PIP],
             ),
             Finger(
                 "middle",
                 image_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
+                world_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_PIP],
             ),
             Finger(
                 "ring",
                 image_landmarks[self.mp_hands.HandLandmark.RING_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.RING_FINGER_TIP],
+                world_landmarks[self.mp_hands.HandLandmark.RING_FINGER_PIP],
             ),
             Finger(
                 "pinky",
                 image_landmarks[self.mp_hands.HandLandmark.PINKY_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.PINKY_TIP],
+                world_landmarks[self.mp_hands.HandLandmark.PINKY_PIP],
             ),
         ]
 
