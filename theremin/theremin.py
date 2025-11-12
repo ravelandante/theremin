@@ -5,16 +5,19 @@ import numpy as np
 from midi_controller import MidiController
 from vision import Vision
 from hand import Hand
+from collections import namedtuple
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 
+Scale = namedtuple("Scale", ["name", "notes"])
+
 POSSIBLE_SCALES = [
-    ("Major", [0, 2, 4, 5, 7, 9, 11, 12]),
-    ("Natural minor", [0, 2, 3, 5, 7, 8, 10, 12]),
-    ("Harmonic minor", [0, 2, 3, 5, 7, 8, 11, 12]),
-    ("Pentatonic", [0, 2, 4, 7, 9, 12, 14, 16]),
-    ("Major blues", [0, 2, 3, 4, 7, 9, 12, 14]),
-    ("Minor blues", [0, 3, 5, 6, 7, 10, 12, 15]),
+    Scale("Major", [0, 2, 4, 5, 7, 9, 11, 12]),
+    Scale("Natural minor", [0, 2, 3, 5, 7, 8, 10, 12]),
+    Scale("Harmonic minor", [0, 2, 3, 5, 7, 8, 11, 12]),
+    Scale("Pentatonic", [0, 2, 4, 7, 9, 12, 14, 16]),
+    Scale("Major blues", [0, 2, 3, 4, 7, 9, 12, 14]),
+    Scale("Minor blues", [0, 3, 5, 6, 7, 10, 12, 15]),
 ]
 
 
@@ -38,7 +41,7 @@ class Theremin:
             (
                 i
                 for i, (scale_name, _) in enumerate(POSSIBLE_SCALES)
-                if scale_name == self.scale[0]
+                if scale_name == self.scale.name
             ),
             0,
         )
@@ -68,7 +71,7 @@ class Theremin:
 
         if right_hand.finger_tips[0].is_finger_bent():
             corrected_note = self.controller.get_corrected_note(
-                clamped_pitch, right_hand, self.scale[1]
+                clamped_pitch, right_hand, self.scale.notes
             )
             self.controller.play_note(
                 corrected_note,
@@ -80,7 +83,7 @@ class Theremin:
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
             self.vision.draw_note_name(corrected_note, final_frame)
-            self.vision.draw_scale_name(self.scale[0], final_frame)
+            self.vision.draw_scale_name(self.scale.name, final_frame)
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
