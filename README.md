@@ -12,3 +12,4 @@
 -   MIDI keyboard integration as more of an expression controller
 -   UI
 -   allow selections for different finger functions to midi CC messages
+-   allow assigning different axes/gestures to different midi control change messages

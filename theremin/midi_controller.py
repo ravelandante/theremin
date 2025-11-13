@@ -11,6 +11,21 @@ from rtmidi.midiconstants import (
 )
 
 PITCH_BEND_RANGE = 8192
+FINGERS_TO_SCALE_DEGREE = {
+    # (index, middle, ring, pinky): scale_degree
+    (False, False, False, False): 1,
+    (True, False, False, False): 2,
+    (True, True, False, False): 3,
+    (True, True, True, False): 4,
+    (True, True, True, True): 5,
+    (False, True, True, True): 6,
+    (False, False, True, True): 7,
+    (False, False, False, True): 8,
+    (True, False, False, True): 9,
+    (True, True, False, True): 10,
+    (True, False, True, True): 11,
+    (True, False, True, False): 12,
+}
 
 
 class MidiController:
@@ -54,47 +69,21 @@ class MidiController:
         self, clamped_pitch: float, right_hand: Hand, scale: List[int]
     ) -> int:
         base_note = round(1 - clamped_pitch, 1) * 10 + 60
-        scale_degree = 1
-        fingers = right_hand.fingers
-        finger_bent = {
-            "index": fingers[1].is_finger_bent(),
-            "middle": fingers[2].is_finger_bent(),
-            "ring": fingers[3].is_finger_bent(),
-            "pinky": fingers[4].is_finger_bent(),
-        }
 
-        if finger_bent["index"]:
-            if finger_bent["pinky"] and finger_bent["ring"] and finger_bent["middle"]:
-                scale_degree = 5
-            elif finger_bent["ring"] and finger_bent["middle"]:
-                scale_degree = 4
-            elif finger_bent["middle"]:
-                if finger_bent["pinky"]:
-                    scale_degree = 10
-                else:
-                    scale_degree = 3
-            elif finger_bent["ring"]:
-                if finger_bent["pinky"]:
-                    scale_degree = 11
-                else:
-                    scale_degree = 12
-            elif finger_bent["pinky"]:
-                scale_degree = 9
-            else:
-                scale_degree = 2
-        else:
-            if finger_bent["pinky"]:
-                if finger_bent["ring"] and finger_bent["middle"]:
-                    scale_degree = 6
-                elif finger_bent["ring"]:
-                    scale_degree = 7
-                else:
-                    scale_degree = 8
+        fingers = right_hand.fingers
+        pattern = (
+            fingers[1].is_finger_bent(),
+            fingers[2].is_finger_bent(),
+            fingers[3].is_finger_bent(),
+            fingers[4].is_finger_bent(),
+        )
+
+        scale_degree = FINGERS_TO_SCALE_DEGREE.get(pattern, 1)
 
         octave = (scale_degree - 1) // len(scale)
-        scale_degree = (scale_degree - 1) % len(scale)
+        degree_index = (scale_degree - 1) % len(scale)
 
-        return int(base_note + scale[scale_degree] + octave * 12)
+        return int(base_note + scale[degree_index] + octave * 12)
 
     def calculate_and_send_pitch_bend(
         self,
