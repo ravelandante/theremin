@@ -5,26 +5,24 @@ from typing import List
 
 from hand import Hand
 
+NOTE_NAMES = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+]
+
 
 class Vision:
     def __init__(self, volume_ratio_max: int, volume_ratio_min: int):
-        self.NOTE_NAMES = [
-            "C",
-            "C#",
-            "D",
-            "D#",
-            "E",
-            "F",
-            "F#",
-            "G",
-            "G#",
-            "A",
-            "A#",
-            "B",
-        ]
-        self.mp_drawing = mp.solutions.drawing_utils
-        self.mp_drawing_styles = mp.solutions.drawing_styles
-
         self.volume_ratio_max = volume_ratio_max
         self.volume_ratio_min = volume_ratio_min
 
@@ -68,7 +66,7 @@ class Vision:
 
         cv2.putText(
             frame,
-            f"Note: {self.NOTE_NAMES[note_index]}{octave}",
+            f"Note: {NOTE_NAMES[note_index]}{octave}",
             (50, 50),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
