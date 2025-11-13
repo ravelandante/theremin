@@ -57,10 +57,10 @@ class Vision:
                 pixel_y = int(finger.tip_y * image_h)
 
                 color = (0, 0, 255) if finger.is_finger_bent() else (0, 255, 0)
-                cv2.circle(frame, (pixel_x, pixel_y), 8, color, -1)
+                cv2.circle(frame, (pixel_x, pixel_y), 12, color, -1)
             wrist_pixel_x = int(hand.wrist.x * image_w)
             wrist_pixel_y = int(hand.wrist.y * image_h)
-            cv2.circle(frame, (wrist_pixel_x, wrist_pixel_y), 8, (255, 0, 0), -1)
+            cv2.circle(frame, (wrist_pixel_x, wrist_pixel_y), 12, (255, 0, 0), -1)
 
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
