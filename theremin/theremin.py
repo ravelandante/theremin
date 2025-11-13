@@ -12,12 +12,13 @@ VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 Scale = namedtuple("Scale", ["name", "notes"])
 
 POSSIBLE_SCALES = [
-    Scale("Major", [0, 2, 4, 5, 7, 9, 11, 12]),
-    Scale("Natural minor", [0, 2, 3, 5, 7, 8, 10, 12]),
-    Scale("Harmonic minor", [0, 2, 3, 5, 7, 8, 11, 12]),
-    Scale("Pentatonic", [0, 2, 4, 7, 9, 12, 14, 16]),
-    Scale("Major blues", [0, 2, 3, 4, 7, 9, 12, 14]),
-    Scale("Minor blues", [0, 3, 5, 6, 7, 10, 12, 15]),
+    Scale("Major", [0, 2, 4, 5, 7, 9, 11]),
+    Scale("Chromatic", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+    Scale("Natural minor", [0, 2, 3, 5, 7, 8, 10]),
+    Scale("Harmonic minor", [0, 2, 3, 5, 7, 8, 11]),
+    Scale("Pentatonic", [0, 2, 4, 7, 9]),
+    Scale("Major blues", [0, 2, 3, 4, 7, 9]),
+    Scale("Minor blues", [0, 3, 5, 6, 7, 10]),
 ]
 
 

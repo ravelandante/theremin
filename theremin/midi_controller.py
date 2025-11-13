@@ -69,7 +69,17 @@ class MidiController:
             elif finger_bent["ring"] and finger_bent["middle"]:
                 scale_degree = 4
             elif finger_bent["middle"]:
-                scale_degree = 3
+                if finger_bent["pinky"]:
+                    scale_degree = 10
+                else:
+                    scale_degree = 3
+            elif finger_bent["ring"]:
+                if finger_bent["pinky"]:
+                    scale_degree = 11
+                else:
+                    scale_degree = 12
+            elif finger_bent["pinky"]:
+                scale_degree = 9
             else:
                 scale_degree = 2
         else:
@@ -81,7 +91,10 @@ class MidiController:
                 else:
                     scale_degree = 8
 
-        return int(base_note + scale[scale_degree - 1])
+        octave = (scale_degree - 1) // len(scale)
+        scale_degree = (scale_degree - 1) % len(scale)
+
+        return int(base_note + scale[scale_degree] + octave * 12)
 
     def calculate_and_send_pitch_bend(
         self,
