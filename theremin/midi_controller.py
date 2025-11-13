@@ -10,6 +10,8 @@ from rtmidi.midiconstants import (
     ALL_NOTES_OFF,
 )
 
+PITCH_BEND_RANGE = 8192
+
 
 class MidiController:
     def __init__(self):
@@ -87,13 +89,12 @@ class MidiController:
         previous_left_wrist_x: float,
         current_time: float,
         previous_time: float,
-        pitch_bend_range: int,
     ):
         if previous_left_wrist_x is not None and previous_time is not None:
             delta_x = left_wrist_x - previous_left_wrist_x
             delta_time = current_time - previous_time
 
-            pitch_bend_amount = int(pitch_bend_range + ((delta_x) / delta_time) * 4096)
+            pitch_bend_amount = int(PITCH_BEND_RANGE + ((delta_x) / delta_time) * 4096)
             pitch_bend_amount = max(0, min(16383, pitch_bend_amount))
 
             self.send_midi(

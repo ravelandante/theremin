@@ -26,7 +26,6 @@ class Theremin:
         self.mp_hands = mp.solutions.hands
         self.controller = MidiController()
         self.vision = Vision(VOLUME_RATIO_BOUNDS[0], VOLUME_RATIO_BOUNDS[1])
-        self.PITCH_BEND_RANGE = 8192
         self.scale = POSSIBLE_SCALES[0]
 
         self.previous_corrected_note = 0
@@ -63,7 +62,6 @@ class Theremin:
             (self.previous_left_thumb_x if left_hand.is_ok_hand() else 0),
             current_time,
             self.previous_time,
-            self.PITCH_BEND_RANGE,
         )
 
         self.previous_left_thumb_x = left_hand.fingers[0].tip_x
