@@ -126,6 +126,10 @@ class Theremin:
                         ):
                             self.perform(right_hand, left_hand, final_frame)
 
+                    else:
+                        self.controller.stop_midi()
+                        self.previous_corrected_note = 0
+
                     cv2.imshow("Theremin", final_frame)
 
                     key = cv2.waitKey(1) & 0xFF
