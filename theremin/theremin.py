@@ -57,17 +57,6 @@ class Theremin:
         )
         clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
 
-        current_time = time.time()
-        self.controller.calculate_and_send_pitch_bend(
-            (left_hand.fingers[0].tip_x if left_hand.is_ok_hand() else 0),
-            (self.previous_left_thumb_x if left_hand.is_ok_hand() else 0),
-            current_time,
-            self.previous_time,
-        )
-
-        self.previous_left_thumb_x = left_hand.fingers[0].tip_x
-        self.previous_time = current_time
-
         if right_hand.fingers[0].is_finger_bent():
             corrected_note = self.controller.get_corrected_note(
                 clamped_pitch, right_hand, self.scale.notes
@@ -78,6 +67,17 @@ class Theremin:
                 clamped_volume,
                 self.previous_clamped_volume,
             )
+
+            current_time = time.time()
+            self.controller.calculate_and_send_pitch_bend(
+                (left_hand.fingers[0].tip_x if left_hand.is_ok_hand() else 0),
+                (self.previous_left_thumb_x if left_hand.is_ok_hand() else 0),
+                current_time,
+                self.previous_time,
+            )
+
+            self.previous_left_thumb_x = left_hand.fingers[0].tip_x
+            self.previous_time = current_time
 
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
