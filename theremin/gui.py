@@ -2,6 +2,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QApplication,
     QVBoxLayout,
+    QPushButton,
     QLabel,
     QWidget,
 )
@@ -27,12 +28,31 @@ class ThereminGUI(QMainWindow):
         self.video_label = QLabel()
         self.layout.addWidget(self.video_label)
 
+        # buttons
+        self.toggle_landmarks_button = QPushButton("Toggle Landmarks")
+        self.toggle_landmarks_button.clicked.connect(self.toggle_landmarks)
+        self.layout.addWidget(self.toggle_landmarks_button)
+
+        self.cycle_scale_button = QPushButton("Cycle Scale")
+        self.cycle_scale_button.clicked.connect(self.cycle_scale)
+        self.layout.addWidget(self.cycle_scale_button)
+
+        self.quit_button = QPushButton("Quit")
+        self.quit_button.clicked.connect(self.close)
+        self.layout.addWidget(self.quit_button)
+
         self.theremin.initialize_capture()
 
         # we need to update frame every 30ms
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
+
+    def toggle_landmarks(self):
+        self.theremin.toggle_landmarks()
+
+    def cycle_scale(self):
+        self.theremin.cycle_scale()
 
     def closeEvent(self, event):
         self.theremin.release_resources()
