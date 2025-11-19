@@ -49,6 +49,9 @@ class Theremin:
         next_scale_index = (current_scale_index + 1) % len(POSSIBLE_SCALES)
         self.scale = POSSIBLE_SCALES[next_scale_index]
 
+    def toggle_landmarks(self):
+        self.draw_landmarks_enabled = not self.draw_landmarks_enabled
+
     def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
         volume_min = VOLUME_RATIO_BOUNDS[0]
         volume_max = 1.0 - VOLUME_RATIO_BOUNDS[1]
@@ -143,7 +146,7 @@ class Theremin:
                 if key == ord("q"):
                     break
                 elif key == ord("d"):
-                    self.draw_landmarks_enabled = not self.draw_landmarks_enabled
+                    self.toggle_landmarks()
                 elif key == ord("s"):
                     self.cycle_scale()
 
