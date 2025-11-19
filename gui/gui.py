@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QPixmap, QImage
 import cv2
-from .theremin import Theremin
+from theremin.theremin import Theremin
 
 
 class ThereminGUI(QMainWindow):
