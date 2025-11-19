@@ -28,6 +28,7 @@ class Theremin:
         self.controller = MidiController()
         self.vision = Vision(VOLUME_RATIO_BOUNDS[0], VOLUME_RATIO_BOUNDS[1])
         self.scale = POSSIBLE_SCALES[0]
+        self.cap = None
 
         self.previous_corrected_note = 0
         self.previous_clamped_volume = 0
@@ -88,63 +89,67 @@ class Theremin:
             self.previous_corrected_note = 0
         self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist.x)
 
+    def initialize_capture(self):
+        self.cap = cv2.VideoCapture(0)
+        self.hand_detector = self.mp_hands.Hands(
+            model_complexity=0,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5,
+            max_num_hands=2,
+        )
+
+    def capture_frame_and_perform(self):
+        success, frame = self.cap.read()
+        if not success:
+            return False, None
+
+        final_frame = self.vision.get_video(
+            self.hand_detector, frame, self.draw_landmarks_enabled
+        )
+
+        if right_hand := next(
+            (hand for hand in self.vision.hands if hand.handedness == "Right"),
+            None,
+        ):
+            if left_hand := next(
+                (hand for hand in self.vision.hands if hand.handedness == "Left"),
+                None,
+            ):
+                self.perform(right_hand, left_hand, final_frame)
+
+        else:
+            self.controller.stop_midi()
+            self.previous_corrected_note = 0
+
+        return True, final_frame
+
+    def release_resources(self):
+        self.cap.release()
+        self.controller.stop_midi()
+        self.controller.midiout.close_port()
+
     def main_loop(self):
         try:
-            cap = cv2.VideoCapture(0)
-            with self.mp_hands.Hands(
-                model_complexity=0,
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5,
-                max_num_hands=2,
-            ) as hand_detector:
+            self.initialize_capture()
 
-                while cap.isOpened():
-                    success, frame = cap.read()
-                    if not success:
-                        print("unable to get webcam feed")
-                        continue
+            while self.cap.isOpened():
+                success, final_frame = self.capture_frame_and_perform()
+                if not success:
+                    continue
 
-                    final_frame = self.vision.get_video(
-                        hand_detector, frame, self.draw_landmarks_enabled
-                    )
+                cv2.imshow("Theremin", final_frame)
 
-                    if right_hand := next(
-                        (
-                            hand
-                            for hand in self.vision.hands
-                            if hand.handedness == "Right"
-                        ),
-                        None,
-                    ):
-                        if left_hand := next(
-                            (
-                                hand
-                                for hand in self.vision.hands
-                                if hand.handedness == "Left"
-                            ),
-                            None,
-                        ):
-                            self.perform(right_hand, left_hand, final_frame)
-
-                    else:
-                        self.controller.stop_midi()
-                        self.previous_corrected_note = 0
-
-                    cv2.imshow("Theremin", final_frame)
-
-                    key = cv2.waitKey(1) & 0xFF
-                    if key == ord("q"):
-                        break
-                    elif key == ord("d"):
-                        self.draw_landmarks_enabled = not self.draw_landmarks_enabled
-                    elif key == ord("s"):
-                        self.cycle_scale()
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord("q"):
+                    break
+                elif key == ord("d"):
+                    self.draw_landmarks_enabled = not self.draw_landmarks_enabled
+                elif key == ord("s"):
+                    self.cycle_scale()
 
         finally:
-            cap.release()
+            self.release_resources()
             cv2.destroyAllWindows()
-            self.controller.stop_midi()
-            self.controller.midiout.close_port()
 
 
 if __name__ == "__main__":
