@@ -9,6 +9,10 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QPixmap, QImage
 import cv2
+import sys
+import os
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from theremin.theremin import Theremin
 
 
@@ -71,8 +75,6 @@ class ThereminGUI(QMainWindow):
 
 
 if __name__ == "__main__":
-    import sys
-
     app = QApplication(sys.argv)
     theremin = Theremin()
     gui = ThereminGUI(theremin)

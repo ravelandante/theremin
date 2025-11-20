@@ -1,5 +1,5 @@
 import rtmidi
-from hand import Hand
+from .hand import Hand
 from typing import List
 from rtmidi.midiconstants import (
     NOTE_ON,

@@ -3,7 +3,7 @@ import mediapipe as mp
 import numpy as np
 from typing import List
 
-from hand import Hand
+from .hand import Hand
 
 NOTE_NAMES = [
     "C",

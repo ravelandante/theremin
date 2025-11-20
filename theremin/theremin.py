@@ -2,9 +2,9 @@ import cv2
 import mediapipe as mp
 import time
 import numpy as np
-from midi_controller import MidiController
-from vision import Vision
-from hand import Hand
+from .midi_controller import MidiController
+from .vision import Vision
+from .hand import Hand
 from collections import namedtuple
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)

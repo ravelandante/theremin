@@ -1,7 +1,7 @@
 import mediapipe as mp
 from typing import List
 
-from finger import Finger
+from .finger import Finger
 
 
 class Hand:
