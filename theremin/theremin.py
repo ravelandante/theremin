@@ -89,11 +89,11 @@ class Theremin:
             self.previous_clamped_volume = clamped_volume
 
             self.vision.draw_note_name(corrected_note, final_frame)
-            self.vision.draw_scale_name(self.scale.name, final_frame)
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
 
+        self.vision.draw_scale_name(self.scale.name, final_frame)
         self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist.x)
 
     def cv2_to_q_image(self, frame: np.ndarray):
