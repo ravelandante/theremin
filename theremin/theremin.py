@@ -6,6 +6,7 @@ from .midi_controller import MidiController
 from .vision import Vision
 from .hand import Hand
 from collections import namedtuple
+from PySide6.QtGui import QPixmap, QImage
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 
@@ -92,6 +93,15 @@ class Theremin:
             self.previous_corrected_note = 0
         self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist.x)
 
+    def cv2_to_q_image(self, frame: np.ndarray):
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        height, width, channel = frame.shape
+        bytes_per_line = channel * width
+        q_image = QPixmap.fromImage(
+            QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
+        )
+        return q_image
+
     def initialize_capture(self):
         self.cap = cv2.VideoCapture(0)
         self.hand_detector = self.mp_hands.Hands(
@@ -101,7 +111,7 @@ class Theremin:
             max_num_hands=2,
         )
 
-    def capture_frame_and_perform(self):
+    def capture_frame_and_perform(self, use_q_image: bool = False):
         success, frame = self.cap.read()
         if not success:
             return False, None
@@ -124,7 +134,9 @@ class Theremin:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
 
-        return True, final_frame
+        return True, (
+            final_frame if not use_q_image else self.cv2_to_q_image(final_frame)
+        )
 
     def release_resources(self):
         self.cap.release()

@@ -7,8 +7,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 from PySide6.QtCore import QTimer
-from PySide6.QtGui import QPixmap, QImage
-import cv2
 import sys
 import os
 
@@ -63,14 +61,8 @@ class ThereminGUI(QMainWindow):
         event.accept()
 
     def update_frame(self):
-        success, frame = self.theremin.capture_frame_and_perform()
+        success, q_image = self.theremin.capture_frame_and_perform(use_q_image=True)
         if success:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            height, width, channel = frame.shape
-            bytes_per_line = channel * width
-            q_image = QPixmap.fromImage(
-                QImage(frame.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            )
             self.video_label.setPixmap(q_image)
 
 
