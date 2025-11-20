@@ -54,8 +54,7 @@ class Theremin:
         self.draw_landmarks_enabled = not self.draw_landmarks_enabled
 
     def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
-        volume_min = VOLUME_RATIO_BOUNDS[0]
-        volume_max = 1.0 - VOLUME_RATIO_BOUNDS[1]
+        volume_min, volume_max = VOLUME_RATIO_BOUNDS[0], 1.0 - VOLUME_RATIO_BOUNDS[1]
 
         clamped_volume = max(
             0.0, min(1.0, (left_hand.wrist.y - volume_min) / (volume_max - volume_min))
@@ -73,24 +72,28 @@ class Theremin:
                 self.previous_clamped_volume,
             )
 
+            if left_hand.is_ok_hand():
+                pitch_bend_x = left_hand.fingers[0].tip_x
+                previous_x = self.previous_left_thumb_x
+            else:
+                pitch_bend_x, previous_x = 0, 0
+
             current_time = time.time()
             self.controller.calculate_and_send_pitch_bend(
-                (left_hand.fingers[0].tip_x if left_hand.is_ok_hand() else 0),
-                (self.previous_left_thumb_x if left_hand.is_ok_hand() else 0),
-                current_time,
-                self.previous_time,
+                pitch_bend_x, previous_x, current_time, self.previous_time
             )
 
             self.previous_left_thumb_x = left_hand.fingers[0].tip_x
             self.previous_time = current_time
-
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
+
             self.vision.draw_note_name(corrected_note, final_frame)
             self.vision.draw_scale_name(self.scale.name, final_frame)
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
+
         self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist.x)
 
     def cv2_to_q_image(self, frame: np.ndarray):
