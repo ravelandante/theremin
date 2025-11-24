@@ -1,7 +1,9 @@
 import mediapipe as mp
 from typing import List
-
 from .finger import Finger
+from math import sqrt
+
+THUMB_INDEX_DISTANCE_THRESHOLD = 0.05
 
 
 class Hand:
@@ -45,12 +47,26 @@ class Hand:
 
         self.wrist = image_landmarks[self.mp_hands.HandLandmark.WRIST]
 
-    def is_ok_hand(self) -> bool:
-        # TODO: make this more robust by using distances between landmarks
-        return (
-            self.fingers[0].is_finger_bent()
-            and self.fingers[1].is_finger_bent()
-            and not self.fingers[2].is_finger_bent()
-            and not self.fingers[3].is_finger_bent()
-            and not self.fingers[4].is_finger_bent()
+    def calculate_finger_distance(self, finger1, finger2) -> float:
+        return sqrt(
+            (finger1.tip_world_x - finger2.tip_world_x) ** 2
+            + (finger1.tip_world_y - finger2.tip_world_y) ** 2
+            + (finger1.tip_world_z - finger2.tip_world_z) ** 2
         )
+
+    def is_ok_hand(self) -> bool:
+        thumb = self.fingers[0]
+        index = self.fingers[1]
+
+        if (
+            self.fingers[2].is_finger_bent()
+            or self.fingers[3].is_finger_bent()
+            or self.fingers[4].is_finger_bent()
+        ):
+            return False
+
+        thumb_index_distance = self.calculate_finger_distance(thumb, index)
+        if thumb_index_distance > THUMB_INDEX_DISTANCE_THRESHOLD:
+            return False
+
+        return True

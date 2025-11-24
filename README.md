@@ -60,7 +60,6 @@ Pitch bend is also controlled by bending the thumb and index finger into an OK s
 -   allow choosing a specific camera
 -   MIDI keyboard integration as more of an expression controller
 -   add more controls for the left fingers (maybe with gestures)
--   make ok gesture recognition more robust (use finger distances)
 -   make right hand y control octave instead of note (maybe)
 -   refactor to use finger enum instead of indices
 -   add polyphonic mode where left hand controls a separate pitch
