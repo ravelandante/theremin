@@ -27,23 +27,10 @@ class ThereminGUI(QMainWindow):
         self.main_layout = QHBoxLayout()
         self.central_widget.setLayout(self.main_layout)
 
+        self.main_layout.addLayout(self.buttons())
+
         self.video_label = QLabel()
         self.main_layout.addWidget(self.video_label)
-
-        self.buttons_layout = QVBoxLayout()
-        self.main_layout.addLayout(self.buttons_layout)
-
-        self.toggle_landmarks_button = QPushButton("Toggle Landmarks")
-        self.toggle_landmarks_button.clicked.connect(self.toggle_landmarks)
-        self.buttons_layout.addWidget(self.toggle_landmarks_button)
-
-        self.cycle_scale_button = QPushButton("Cycle Scale")
-        self.cycle_scale_button.clicked.connect(self.cycle_scale)
-        self.buttons_layout.addWidget(self.cycle_scale_button)
-
-        self.quit_button = QPushButton("Quit")
-        self.quit_button.clicked.connect(self.close)
-        self.buttons_layout.addWidget(self.quit_button)
 
         self.theremin.initialize_capture()
 
@@ -51,6 +38,23 @@ class ThereminGUI(QMainWindow):
         self.timer = QTimer()
         self.timer.timeout.connect(self.update_frame)
         self.timer.start(30)
+
+    def buttons(self):
+        buttons_layout = QVBoxLayout()
+
+        toggle_landmarks_button = QPushButton("Toggle Landmarks")
+        toggle_landmarks_button.clicked.connect(self.toggle_landmarks)
+        buttons_layout.addWidget(toggle_landmarks_button)
+
+        cycle_scale_button = QPushButton("Cycle Scale")
+        cycle_scale_button.clicked.connect(self.cycle_scale)
+        buttons_layout.addWidget(cycle_scale_button)
+
+        quit_button = QPushButton("Quit")
+        quit_button.clicked.connect(self.close)
+        buttons_layout.addWidget(quit_button)
+
+        return buttons_layout
 
     def toggle_landmarks(self):
         self.theremin.toggle_landmarks()
