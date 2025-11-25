@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QWidget,
 )
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
 import sys
 import os
 
@@ -27,10 +27,10 @@ class ThereminGUI(QMainWindow):
         self.main_layout = QHBoxLayout()
         self.central_widget.setLayout(self.main_layout)
 
-        self.main_layout.addLayout(self.buttons())
-
         self.video_label = QLabel()
         self.main_layout.addWidget(self.video_label)
+
+        self.main_layout.addLayout(self.buttons())
 
         self.theremin.initialize_capture()
 
@@ -41,6 +41,7 @@ class ThereminGUI(QMainWindow):
 
     def buttons(self):
         buttons_layout = QVBoxLayout()
+        buttons_layout.setAlignment(Qt.AlignTop)
 
         toggle_landmarks_button = QPushButton("Toggle Landmarks")
         toggle_landmarks_button.clicked.connect(self.toggle_landmarks)
@@ -49,10 +50,6 @@ class ThereminGUI(QMainWindow):
         cycle_scale_button = QPushButton("Cycle Scale")
         cycle_scale_button.clicked.connect(self.cycle_scale)
         buttons_layout.addWidget(cycle_scale_button)
-
-        quit_button = QPushButton("Quit")
-        quit_button.clicked.connect(self.close)
-        buttons_layout.addWidget(quit_button)
 
         return buttons_layout
 
