@@ -63,4 +63,6 @@ Pitch bend is also controlled by bending the thumb and index finger into an OK s
 -   make right hand y control octave instead of note (maybe)
 -   refactor to use finger enum instead of indices
 -   add polyphonic mode where left hand controls a separate pitch
+-   perm storage for preferences and customisations
+-   debouncing for finger bending
 -   host?
