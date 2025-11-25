@@ -6,13 +6,14 @@ from PySide6.QtWidgets import (
     QPushButton,
     QLabel,
     QWidget,
+    QComboBox,
 )
 from PySide6.QtCore import QTimer, Qt
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from theremin.theremin import Theremin
+from theremin.theremin import Theremin, POSSIBLE_SCALES
 
 
 class ThereminGUI(QMainWindow):
@@ -47,9 +48,13 @@ class ThereminGUI(QMainWindow):
         toggle_landmarks_button.clicked.connect(self.toggle_landmarks)
         buttons_layout.addWidget(toggle_landmarks_button)
 
-        cycle_scale_button = QPushButton("Cycle Scale")
-        cycle_scale_button.clicked.connect(self.cycle_scale)
-        buttons_layout.addWidget(cycle_scale_button)
+        scale_label = QLabel("Select Scale:")
+        buttons_layout.addWidget(scale_label)
+
+        scale_dropdown = QComboBox()
+        scale_dropdown.addItems([scale.name for scale in POSSIBLE_SCALES])
+        scale_dropdown.currentIndexChanged.connect(self.change_scale)
+        buttons_layout.addWidget(scale_dropdown)
 
         return buttons_layout
 
@@ -65,8 +70,8 @@ class ThereminGUI(QMainWindow):
     def toggle_landmarks(self):
         self.theremin.toggle_landmarks()
 
-    def cycle_scale(self):
-        self.theremin.cycle_scale()
+    def change_scale(self, index):
+        self.theremin.scale = POSSIBLE_SCALES[index]
 
     def showEvent(self, event):
         event.accept()
