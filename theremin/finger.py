@@ -24,4 +24,10 @@ class Finger:
         if self.finger_type == "thumb":
             return abs(self.tip_world_x) < 0.06
 
-        return self.tip_world_y > self.pip_world_y - 0.01
+        y_adjuster = 0.015
+        if self.finger_type == "ring":
+            y_adjuster = 0.01
+        elif self.finger_type == "pinky":
+            y_adjuster = 0.02
+
+        return self.tip_world_y > self.pip_world_y - y_adjuster
