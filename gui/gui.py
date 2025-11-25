@@ -53,11 +53,25 @@ class ThereminGUI(QMainWindow):
 
         return buttons_layout
 
+    def center_on_screen(self):
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.availableGeometry()
+        window_geometry = self.frameGeometry()
+
+        center_point = screen_geometry.center()
+        window_geometry.moveCenter(center_point)
+        self.move(window_geometry.topLeft())
+
     def toggle_landmarks(self):
         self.theremin.toggle_landmarks()
 
     def cycle_scale(self):
         self.theremin.cycle_scale()
+
+    def showEvent(self, event):
+        event.accept()
+        # this needs to be delayed to ensure the window is fully shown (needs a better solution)
+        QTimer.singleShot(100, self.center_on_screen)
 
     def closeEvent(self, event):
         self.theremin.release_resources()
