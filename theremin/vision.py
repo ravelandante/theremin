@@ -55,9 +55,15 @@ class Vision:
 
                 color = (0, 0, 255) if finger.is_finger_bent() else (0, 255, 0)
                 cv2.circle(frame, (pixel_x, pixel_y), 12, color, -1)
-            wrist_pixel_x = int(hand.wrist.x * image_w)
-            wrist_pixel_y = int(hand.wrist.y * image_h)
-            cv2.circle(frame, (wrist_pixel_x, wrist_pixel_y), 12, (255, 0, 0), -1)
+            if hand.handedness == "Left":
+                vertical_landmark_x = int(hand.fingers[2].mcp_x * image_w)
+                vertical_landmark_y = int(hand.fingers[2].mcp_y * image_h)
+            else:
+                vertical_landmark_x = int(hand.wrist.x * image_w)
+                vertical_landmark_y = int(hand.wrist.y * image_h)
+            cv2.circle(
+                frame, (vertical_landmark_x, vertical_landmark_y), 12, (255, 0, 0), -1
+            )
 
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
         octave = (midi_note // 12) - 1
@@ -84,7 +90,9 @@ class Vision:
             2,
         )
 
-    def draw_volume(self, volume: float, frame: np.ndarray, left_wrist_x: float):
+    def draw_volume(
+        self, volume: float, frame: np.ndarray, controller_landmark_x: float
+    ):
         image_h, image_w, _ = frame.shape
         volume_pixel_max = int(self.volume_ratio_max * image_h)
         volume_pixel_min = int(self.volume_ratio_min * image_h)
@@ -104,7 +112,7 @@ class Vision:
         )
         cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
 
-        left_wrist_pixel_x = int(left_wrist_x * image_w)
+        left_wrist_pixel_x = int(controller_landmark_x * image_w)
         cv2.line(
             frame,
             (left_wrist_pixel_x, circle_y),

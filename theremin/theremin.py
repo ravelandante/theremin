@@ -57,7 +57,11 @@ class Theremin:
         volume_min, volume_max = VOLUME_RATIO_BOUNDS[0], 1.0 - VOLUME_RATIO_BOUNDS[1]
 
         clamped_volume = max(
-            0.0, min(1.0, (left_hand.wrist.y - volume_min) / (volume_max - volume_min))
+            0.0,
+            min(
+                1.0,
+                (left_hand.fingers[2].mcp_y - volume_min) / (volume_max - volume_min),
+            ),
         )
         clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
 
@@ -93,7 +97,9 @@ class Theremin:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
 
-        self.vision.draw_volume(1 - clamped_volume, final_frame, left_hand.wrist.x)
+        self.vision.draw_volume(
+            1 - clamped_volume, final_frame, left_hand.fingers[2].mcp_x
+        )
 
     def cv2_to_q_image(self, frame: np.ndarray):
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

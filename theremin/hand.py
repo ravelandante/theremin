@@ -18,30 +18,35 @@ class Hand:
                 image_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.THUMB_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.THUMB_IP],
+                image_landmarks[self.mp_hands.HandLandmark.THUMB_MCP],
             ),
             Finger(
                 "index",
                 image_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_PIP],
+                image_landmarks[self.mp_hands.HandLandmark.INDEX_FINGER_MCP],
             ),
             Finger(
                 "middle",
                 image_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_PIP],
+                image_landmarks[self.mp_hands.HandLandmark.MIDDLE_FINGER_MCP],
             ),
             Finger(
                 "ring",
                 image_landmarks[self.mp_hands.HandLandmark.RING_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.RING_FINGER_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.RING_FINGER_PIP],
+                image_landmarks[self.mp_hands.HandLandmark.RING_FINGER_MCP],
             ),
             Finger(
                 "pinky",
                 image_landmarks[self.mp_hands.HandLandmark.PINKY_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.PINKY_TIP],
                 world_landmarks[self.mp_hands.HandLandmark.PINKY_PIP],
+                image_landmarks[self.mp_hands.HandLandmark.PINKY_MCP],
             ),
         ]
 

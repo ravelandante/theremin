@@ -5,12 +5,17 @@ class Finger:
         finger_tip_landmark,
         finger_tip_world_landmark,
         finger_pip_world_landmark,
+        finger_mcp_landmark,
     ):
         self.finger_type = finger_type
 
         self.tip_x = finger_tip_landmark.x
+        self.tip_x = finger_tip_landmark.x
         self.tip_y = finger_tip_landmark.y
-        self.tip_z = finger_tip_landmark.z
+
+        self.mcp_x = finger_mcp_landmark.x
+        self.mcp_y = finger_mcp_landmark.y
+        self.mcp_z = finger_mcp_landmark.z
 
         self.tip_world_x = finger_tip_world_landmark.x
         self.tip_world_y = finger_tip_world_landmark.y
