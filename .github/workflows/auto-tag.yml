@@ -1,0 +1,30 @@
+name: Auto Tag Version on Main
+
+on:
+    push:
+        branches:
+            - main
+
+jobs:
+    tag_version:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Auto-increment Semantic Version Tag
+              id: tag_version
+              uses: anothrNick/github-tag-action@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  DEFAULT_BUMP: patch
+                  WITH_V: true
+
+            - name: Output Tag Info
+              run: |
+                  echo "The new tag is: ${{ steps.tag_version.outputs.new_tag }}"
+                  echo "The new version is: ${{ steps.tag_version.outputs.new_version }}"
