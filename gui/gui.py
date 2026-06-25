@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QWidget,
     QComboBox,
+    QMessageBox,
 )
 from PySide6.QtCore import QThread, Signal, Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -19,8 +20,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from theremin.theremin import Theremin, POSSIBLE_SCALES
 
 
+CAMERA_FAILURE_LIMIT = 10
+
+
 class CaptureWorker(QThread):
     frame_ready = Signal(QImage)
+    camera_error = Signal(str)
 
     def __init__(self, theremin: Theremin):
         super().__init__()
@@ -28,13 +33,20 @@ class CaptureWorker(QThread):
         self._running = True
 
     def run(self):
+        consecutive_failures = 0
         while self._running:
             success, frame = self.theremin.capture_frame_and_perform()
-            if success and frame is not None:
-                h, w, ch = frame.shape
-                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                q_image = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888).copy()
-                self.frame_ready.emit(q_image)
+            if not success or frame is None:
+                consecutive_failures += 1
+                if consecutive_failures >= CAMERA_FAILURE_LIMIT:
+                    self.camera_error.emit("Camera disconnected or stopped responding.")
+                    return
+                continue
+            consecutive_failures = 0
+            h, w, ch = frame.shape
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            q_image = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888).copy()
+            self.frame_ready.emit(q_image)
 
     def stop(self):
         self._running = False
@@ -58,10 +70,15 @@ class ThereminGUI(QMainWindow):
 
         self.main_layout.addLayout(self.buttons())
 
-        self.theremin.initialize_capture()
+        try:
+            self.theremin.initialize_capture()
+        except RuntimeError as e:
+            QMessageBox.critical(self, "Camera Error", str(e))
+            raise
 
         self.worker = CaptureWorker(self.theremin)
         self.worker.frame_ready.connect(self.update_frame)
+        self.worker.camera_error.connect(self.on_camera_error)
         self.worker.start()
 
     def buttons(self):
@@ -103,6 +120,12 @@ class ThereminGUI(QMainWindow):
         self.worker.stop()
         self.theremin.release_resources()
         event.accept()
+
+    def on_camera_error(self, message: str):
+        self.worker.stop()
+        self.theremin.release_resources()
+        QMessageBox.critical(self, "Camera Error", message)
+        self.close()
 
     def update_frame(self, q_image: QImage):
         self.video_label.setPixmap(QPixmap.fromImage(q_image))
