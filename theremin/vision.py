@@ -142,7 +142,6 @@ class Vision:
 
         frame.flags.writeable = True
 
-        resized_frame = cv2.resize(frame, (1280, 720))
         if results.multi_hand_world_landmarks and results.multi_hand_landmarks:
             self.hands = self.get_hand_landmarks(
                 results.multi_hand_world_landmarks,
@@ -151,10 +150,8 @@ class Vision:
             )
 
             if draw_landmarks_enabled:
-                self.draw_landmarks(
-                    resized_frame,
-                )
+                self.draw_landmarks(frame)
         else:
             self.hands = []
 
-        return resized_frame
+        return frame
