@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QComboBox,
     QMessageBox,
+    QSizePolicy,
 )
 from PySide6.QtCore import QThread, Signal, Qt, QTimer
 from PySide6.QtGui import QPixmap, QImage
@@ -66,6 +67,10 @@ class ThereminGUI(QMainWindow):
         self.central_widget.setLayout(self.main_layout)
 
         self.video_label = QLabel()
+        self.video_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.video_label.setAlignment(Qt.AlignCenter)
+        self.video_label.setMinimumSize(1, 1)
+        self._current_pixmap = None
         self.main_layout.addWidget(self.video_label)
 
         self.main_layout.addLayout(self.buttons())
@@ -80,6 +85,10 @@ class ThereminGUI(QMainWindow):
         self.worker.frame_ready.connect(self.update_frame)
         self.worker.camera_error.connect(self.on_camera_error)
         self.worker.start()
+
+        self.video_label.setMinimumSize(640, 360)
+        self.adjustSize()
+        self.video_label.setMinimumSize(1, 1)
 
     def buttons(self):
         buttons_layout = QVBoxLayout()
@@ -127,8 +136,24 @@ class ThereminGUI(QMainWindow):
         QMessageBox.critical(self, "Camera Error", message)
         self.close()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._display_pixmap()
+
+    def _display_pixmap(self):
+        if self._current_pixmap is None:
+            return
+        self.video_label.setPixmap(
+            self._current_pixmap.scaled(
+                self.video_label.size(),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation,
+            )
+        )
+
     def update_frame(self, q_image: QImage):
-        self.video_label.setPixmap(QPixmap.fromImage(q_image))
+        self._current_pixmap = QPixmap.fromImage(q_image)
+        self._display_pixmap()
 
 
 if __name__ == "__main__":
