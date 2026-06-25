@@ -1,3 +1,7 @@
+import cv2
+import sys
+import os
+
 from PySide6.QtWidgets import (
     QMainWindow,
     QApplication,
@@ -8,12 +12,33 @@ from PySide6.QtWidgets import (
     QWidget,
     QComboBox,
 )
-from PySide6.QtCore import QTimer, Qt
-import sys
-import os
+from PySide6.QtCore import QThread, Signal, Qt, QTimer
+from PySide6.QtGui import QPixmap, QImage
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from theremin.theremin import Theremin, POSSIBLE_SCALES
+
+
+class CaptureWorker(QThread):
+    frame_ready = Signal(QImage)
+
+    def __init__(self, theremin: Theremin):
+        super().__init__()
+        self.theremin = theremin
+        self._running = True
+
+    def run(self):
+        while self._running:
+            success, frame = self.theremin.capture_frame_and_perform()
+            if success and frame is not None:
+                h, w, ch = frame.shape
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                q_image = QImage(rgb.data, w, h, ch * w, QImage.Format_RGB888).copy()
+                self.frame_ready.emit(q_image)
+
+    def stop(self):
+        self._running = False
+        self.wait()
 
 
 class ThereminGUI(QMainWindow):
@@ -35,10 +60,9 @@ class ThereminGUI(QMainWindow):
 
         self.theremin.initialize_capture()
 
-        # we need to update frame every 30ms
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(30)
+        self.worker = CaptureWorker(self.theremin)
+        self.worker.frame_ready.connect(self.update_frame)
+        self.worker.start()
 
     def buttons(self):
         buttons_layout = QVBoxLayout()
@@ -62,9 +86,7 @@ class ThereminGUI(QMainWindow):
         screen = QApplication.primaryScreen()
         screen_geometry = screen.availableGeometry()
         window_geometry = self.frameGeometry()
-
-        center_point = screen_geometry.center()
-        window_geometry.moveCenter(center_point)
+        window_geometry.moveCenter(screen_geometry.center())
         self.move(window_geometry.topLeft())
 
     def toggle_landmarks(self):
@@ -75,17 +97,15 @@ class ThereminGUI(QMainWindow):
 
     def showEvent(self, event):
         event.accept()
-        # this needs to be delayed to ensure the window is fully shown (needs a better solution)
         QTimer.singleShot(100, self.center_on_screen)
 
     def closeEvent(self, event):
+        self.worker.stop()
         self.theremin.release_resources()
         event.accept()
 
-    def update_frame(self):
-        success, q_image = self.theremin.capture_frame_and_perform(use_q_image=True)
-        if success:
-            self.video_label.setPixmap(q_image)
+    def update_frame(self, q_image: QImage):
+        self.video_label.setPixmap(QPixmap.fromImage(q_image))
 
 
 if __name__ == "__main__":
