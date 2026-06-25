@@ -10,7 +10,6 @@ class Finger:
         self.finger_type = finger_type
 
         self.tip_x = finger_tip_landmark.x
-        self.tip_x = finger_tip_landmark.x
         self.tip_y = finger_tip_landmark.y
 
         self.mcp_x = finger_mcp_landmark.x
