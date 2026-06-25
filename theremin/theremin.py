@@ -2,6 +2,7 @@ import cv2
 import mediapipe as mp
 import time
 import numpy as np
+from dataclasses import dataclass
 from .midi_controller import MidiController
 from .vision import Vision
 from .hand import Hand
@@ -9,6 +10,31 @@ from collections import namedtuple
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)
 DEBOUNCE_FRAMES = 3
+
+NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+
+@dataclass
+class FingerOverlayData:
+    tip_x: float
+    tip_y: float
+    is_bent: bool
+
+
+@dataclass
+class HandOverlayData:
+    fingers: list
+    control_x: float
+    control_y: float
+
+
+@dataclass
+class FrameOverlay:
+    hands: list
+    draw_landmarks: bool
+    note: int | None
+    volume: float | None
+    volume_controller_x: float | None
 
 Scale = namedtuple("Scale", ["name", "notes"])
 
@@ -40,6 +66,10 @@ class Theremin:
         self.previous_ok_hand = False
         # (handedness, finger_idx) -> [debounced_state, pending_state, pending_count]
         self._bend_debounce: dict = {}
+
+        self._current_note: int | None = None
+        self._current_volume: float | None = None
+        self._current_volume_controller_x: float | None = None
 
     def cycle_scale(self):
         current_scale_index = next(
@@ -76,7 +106,7 @@ class Theremin:
                 self._bend_debounce[key] = [debounced, pending, count]
                 finger.debounced_bent = debounced
 
-    def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
+    def perform(self, right_hand: Hand, left_hand: Hand):
         volume_min, volume_max = VOLUME_RATIO_BOUNDS[0], 1.0 - VOLUME_RATIO_BOUNDS[1]
 
         clamped_volume = max(
@@ -87,6 +117,9 @@ class Theremin:
             ),
         )
         clamped_pitch = max(0.0, min(1.0, right_hand.wrist.y))
+
+        self._current_volume = clamped_volume
+        self._current_volume_controller_x = left_hand.fingers[2].mcp_x
 
         if right_hand.fingers[0].is_finger_bent():
             corrected_note = self.controller.get_corrected_note(
@@ -116,14 +149,31 @@ class Theremin:
 
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
-
-            self.vision.draw_note_name(corrected_note, final_frame)
+            self._current_note = corrected_note
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
+            self._current_note = None
 
-        self.vision.draw_volume(
-            1 - clamped_volume, final_frame, left_hand.fingers[2].mcp_x
+    def _build_overlay(self) -> FrameOverlay:
+        hand_overlays = []
+        for hand in self.vision.hands:
+            fingers = [
+                FingerOverlayData(f.tip_x, f.tip_y, f.is_finger_bent())
+                for f in hand.fingers
+            ]
+            if hand.handedness == "Left":
+                cx, cy = hand.fingers[2].mcp_x, hand.fingers[2].mcp_y
+            else:
+                cx, cy = hand.wrist.x, hand.wrist.y
+            hand_overlays.append(HandOverlayData(fingers, cx, cy))
+
+        return FrameOverlay(
+            hands=hand_overlays,
+            draw_landmarks=self.draw_landmarks_enabled,
+            note=self._current_note,
+            volume=self._current_volume,
+            volume_controller_x=self._current_volume_controller_x,
         )
 
     def initialize_capture(self):
@@ -140,11 +190,9 @@ class Theremin:
     def capture_frame_and_perform(self):
         success, frame = self.cap.read()
         if not success:
-            return False, None
+            return False, None, None
 
-        final_frame = self.vision.get_video(
-            self.hand_detector, frame, self.draw_landmarks_enabled
-        )
+        final_frame = self.vision.get_video(self.hand_detector, frame)
 
         if right_hand := next(
             (hand for hand in self.vision.hands if hand.handedness == "Right"),
@@ -155,13 +203,15 @@ class Theremin:
                 None,
             ):
                 self._apply_debounce(right_hand, left_hand)
-                self.perform(right_hand, left_hand, final_frame)
-
+                self.perform(right_hand, left_hand)
         else:
             self.controller.stop_midi()
             self.previous_corrected_note = 0
+            self._current_note = None
+            self._current_volume = None
+            self._current_volume_controller_x = None
 
-        return True, final_frame
+        return True, final_frame, self._build_overlay()
 
     def release_resources(self):
         self.cap.release()
@@ -173,7 +223,7 @@ class Theremin:
             self.initialize_capture()
 
             while self.cap.isOpened():
-                success, final_frame = self.capture_frame_and_perform()
+                success, final_frame, _ = self.capture_frame_and_perform()
                 if not success:
                     continue
 

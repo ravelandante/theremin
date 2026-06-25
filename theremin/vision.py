@@ -4,24 +4,9 @@ from typing import List
 
 from .hand import Hand
 
-NOTE_NAMES = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B",
-]
-
 
 class Vision:
-    def __init__(self, volume_ratio_max: int, volume_ratio_min: int):
+    def __init__(self, volume_ratio_max: float, volume_ratio_min: float):
         self.volume_ratio_max = volume_ratio_max
         self.volume_ratio_min = volume_ratio_min
 
@@ -43,97 +28,7 @@ class Vision:
 
         return hands
 
-    def draw_landmarks(
-        self,
-        frame: np.ndarray,
-    ):
-        image_h, image_w, _ = frame.shape
-        for hand in self.hands:
-            for finger in hand.fingers:
-                pixel_x = int(finger.tip_x * image_w)
-                pixel_y = int(finger.tip_y * image_h)
-
-                color = (0, 0, 255) if finger.is_finger_bent() else (0, 255, 0)
-                cv2.circle(frame, (pixel_x, pixel_y), 6, color, -1)
-            if hand.handedness == "Left":
-                vertical_landmark_x = int(hand.fingers[2].mcp_x * image_w)
-                vertical_landmark_y = int(hand.fingers[2].mcp_y * image_h)
-            else:
-                vertical_landmark_x = int(hand.wrist.x * image_w)
-                vertical_landmark_y = int(hand.wrist.y * image_h)
-            cv2.circle(
-                frame, (vertical_landmark_x, vertical_landmark_y), 6, (255, 0, 0), -1
-            )
-
-    def draw_note_name(self, midi_note: int, frame: np.ndarray):
-        octave = (midi_note // 12) - 1
-        note_index = midi_note % 12
-
-        cv2.putText(
-            frame,
-            f"Note: {NOTE_NAMES[note_index]}{octave}",
-            (25, 25),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            1,
-        )
-
-    def draw_scale_name(self, scale_name: str, frame: np.ndarray):
-        cv2.putText(
-            frame,
-            f"Scale: {scale_name}",
-            (25, 50),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            1,
-        )
-
-    def draw_volume(
-        self, volume: float, frame: np.ndarray, controller_landmark_x: float
-    ):
-        image_h, image_w, _ = frame.shape
-        volume_pixel_max = int(self.volume_ratio_max * image_h)
-        volume_pixel_min = int(self.volume_ratio_min * image_h)
-        circle_y = int(
-            image_h
-            - volume_pixel_min
-            - (volume * (image_h - volume_pixel_min - volume_pixel_max))
-        )
-        circle_x = 10
-
-        cv2.line(
-            frame,
-            (circle_x, volume_pixel_max),
-            (circle_x, image_h - volume_pixel_min),
-            (0, 255, 0),
-            1,
-        )
-        cv2.circle(frame, (circle_x, circle_y), 2, (0, 255, 0), -1)
-
-        left_wrist_pixel_x = int(controller_landmark_x * image_w)
-        cv2.line(
-            frame,
-            (left_wrist_pixel_x, circle_y),
-            (5, circle_y),
-            (0, 255, 0),
-            1,
-        )
-
-        cv2.putText(
-            frame,
-            f"{volume:.2f}",
-            (circle_x + 5, circle_y - 5),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.3,
-            (0, 255, 0),
-            1,
-        )
-
-    def get_video(
-        self, hand_detector, frame: np.ndarray, draw_landmarks_enabled: bool
-    ) -> np.ndarray:
+    def get_video(self, hand_detector, frame: np.ndarray) -> np.ndarray:
         frame = cv2.flip(cv2.resize(frame, (640, 360)), 1)
         frame.flags.writeable = False
         image_to_detect = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -148,9 +43,6 @@ class Vision:
                 results.multi_hand_landmarks,
                 results.multi_handedness,
             )
-
-            if draw_landmarks_enabled:
-                self.draw_landmarks(frame)
         else:
             self.hands = []
 
