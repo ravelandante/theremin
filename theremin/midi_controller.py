@@ -106,5 +106,9 @@ class MidiController:
                 (pitch_bend_amount >> 7) & 0x7F,
             )
 
+    def reset_pitch_bend(self):
+        center = PITCH_BEND_RANGE
+        self.send_midi(PITCH_BEND, 1, center & 0x7F, (center >> 7) & 0x7F)
+
     def stop_midi(self):
         self.send_midi(CONTROL_CHANGE, 1, ALL_NOTES_OFF, 0)

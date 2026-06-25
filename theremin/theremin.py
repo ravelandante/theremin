@@ -37,6 +37,7 @@ class Theremin:
 
         self.previous_left_thumb_x = None
         self.previous_time = None
+        self.previous_ok_hand = False
 
     def cycle_scale(self):
         current_scale_index = next(
@@ -76,19 +77,21 @@ class Theremin:
                 self.previous_clamped_volume,
             )
 
-            if left_hand.is_ok_hand():
-                pitch_bend_x = left_hand.fingers[0].tip_x
-                previous_x = self.previous_left_thumb_x
-            else:
-                pitch_bend_x, previous_x = 0, 0
+            is_ok = left_hand.is_ok_hand()
+            if is_ok:
+                current_time = time.time()
+                self.controller.calculate_and_send_pitch_bend(
+                    left_hand.fingers[0].tip_x,
+                    self.previous_left_thumb_x,
+                    current_time,
+                    self.previous_time,
+                )
+                self.previous_left_thumb_x = left_hand.fingers[0].tip_x
+                self.previous_time = current_time
+            elif self.previous_ok_hand:
+                self.controller.reset_pitch_bend()
+            self.previous_ok_hand = is_ok
 
-            current_time = time.time()
-            self.controller.calculate_and_send_pitch_bend(
-                pitch_bend_x, previous_x, current_time, self.previous_time
-            )
-
-            self.previous_left_thumb_x = left_hand.fingers[0].tip_x
-            self.previous_time = current_time
             self.previous_corrected_note = corrected_note
             self.previous_clamped_volume = clamped_volume
 
