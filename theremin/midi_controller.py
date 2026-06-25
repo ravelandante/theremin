@@ -54,15 +54,16 @@ class MidiController:
         corrected_note: int,
         previous_corrected_note: int,
         clamped_volume: float,
-        previous_clamped_volume: int,
+        previous_clamped_volume: float,
     ):
-        normalised_volume = (1 - clamped_volume) * 127
+        normalised_volume = int((1 - clamped_volume) * 127)
+        previous_normalised_volume = int((1 - previous_clamped_volume) * 127)
 
         if previous_corrected_note != corrected_note:
             self.send_midi(NOTE_ON, 1, corrected_note, normalised_volume)
             self.send_midi(NOTE_OFF, 1, previous_corrected_note, 0)
 
-        if previous_clamped_volume != normalised_volume:
+        if previous_normalised_volume != normalised_volume:
             self.send_midi(CHANNEL_AFTERTOUCH, 1, normalised_volume, 0)
 
     def get_corrected_note(
