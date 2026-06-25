@@ -54,7 +54,7 @@ class Vision:
                 pixel_y = int(finger.tip_y * image_h)
 
                 color = (0, 0, 255) if finger.is_finger_bent() else (0, 255, 0)
-                cv2.circle(frame, (pixel_x, pixel_y), 12, color, -1)
+                cv2.circle(frame, (pixel_x, pixel_y), 6, color, -1)
             if hand.handedness == "Left":
                 vertical_landmark_x = int(hand.fingers[2].mcp_x * image_w)
                 vertical_landmark_y = int(hand.fingers[2].mcp_y * image_h)
@@ -62,7 +62,7 @@ class Vision:
                 vertical_landmark_x = int(hand.wrist.x * image_w)
                 vertical_landmark_y = int(hand.wrist.y * image_h)
             cv2.circle(
-                frame, (vertical_landmark_x, vertical_landmark_y), 12, (255, 0, 0), -1
+                frame, (vertical_landmark_x, vertical_landmark_y), 6, (255, 0, 0), -1
             )
 
     def draw_note_name(self, midi_note: int, frame: np.ndarray):
@@ -72,22 +72,22 @@ class Vision:
         cv2.putText(
             frame,
             f"Note: {NOTE_NAMES[note_index]}{octave}",
-            (50, 50),
+            (25, 25),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1,
+            0.5,
             (0, 255, 0),
-            2,
+            1,
         )
 
     def draw_scale_name(self, scale_name: str, frame: np.ndarray):
         cv2.putText(
             frame,
             f"Scale: {scale_name}",
-            (50, 100),
+            (25, 50),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1,
+            0.5,
             (0, 255, 0),
-            2,
+            1,
         )
 
     def draw_volume(
@@ -101,22 +101,22 @@ class Vision:
             - volume_pixel_min
             - (volume * (image_h - volume_pixel_min - volume_pixel_max))
         )
-        circle_x = 20
+        circle_x = 10
 
         cv2.line(
             frame,
             (circle_x, volume_pixel_max),
             (circle_x, image_h - volume_pixel_min),
             (0, 255, 0),
-            2,
+            1,
         )
-        cv2.circle(frame, (circle_x, circle_y), 4, (0, 255, 0), -1)
+        cv2.circle(frame, (circle_x, circle_y), 2, (0, 255, 0), -1)
 
         left_wrist_pixel_x = int(controller_landmark_x * image_w)
         cv2.line(
             frame,
             (left_wrist_pixel_x, circle_y),
-            (10, circle_y),
+            (5, circle_y),
             (0, 255, 0),
             1,
         )
@@ -124,11 +124,11 @@ class Vision:
         cv2.putText(
             frame,
             f"{volume:.2f}",
-            (circle_x + 10, circle_y - 10),
+            (circle_x + 5, circle_y - 5),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.6,
+            0.3,
             (0, 255, 0),
-            2,
+            1,
         )
 
     def get_video(
