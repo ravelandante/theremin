@@ -96,6 +96,8 @@ class MidiController:
         if previous_left_wrist_x is not None and previous_time is not None:
             delta_x = left_wrist_x - previous_left_wrist_x
             delta_time = current_time - previous_time
+            if delta_time == 0:
+                return
 
             pitch_bend_amount = int(PITCH_BEND_RANGE + ((delta_x) / delta_time) * 4096)
             pitch_bend_amount = max(0, min(16383, pitch_bend_amount))
