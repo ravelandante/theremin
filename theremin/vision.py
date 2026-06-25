@@ -154,5 +154,7 @@ class Vision:
                 self.draw_landmarks(
                     resized_frame,
                 )
+        else:
+            self.hands = []
 
         return resized_frame
