@@ -25,7 +25,9 @@ class Finger:
         self.pip_world_y = finger_pip_world_landmark.y
         self.pip_world_z = finger_pip_world_landmark.z
 
-    def is_finger_bent(self) -> bool:
+        self.debounced_bent: bool | None = None
+
+    def raw_is_finger_bent(self) -> bool:
         if self.finger_type == "thumb":
             return abs(self.tip_world_x) < 0.06
 
@@ -36,3 +38,8 @@ class Finger:
             y_adjuster = 0.02
 
         return self.tip_world_y > self.pip_world_y - y_adjuster
+
+    def is_finger_bent(self) -> bool:
+        if self.debounced_bent is not None:
+            return self.debounced_bent
+        return self.raw_is_finger_bent()

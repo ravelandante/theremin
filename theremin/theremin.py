@@ -9,6 +9,7 @@ from collections import namedtuple
 from PySide6.QtGui import QPixmap, QImage
 
 VOLUME_RATIO_BOUNDS = (0.14, 0.07)
+DEBOUNCE_FRAMES = 3
 
 Scale = namedtuple("Scale", ["name", "notes"])
 
@@ -38,6 +39,8 @@ class Theremin:
         self.previous_left_thumb_x = None
         self.previous_time = None
         self.previous_ok_hand = False
+        # (handedness, finger_idx) -> [debounced_state, pending_state, pending_count]
+        self._bend_debounce: dict = {}
 
     def cycle_scale(self):
         current_scale_index = next(
@@ -53,6 +56,26 @@ class Theremin:
 
     def toggle_landmarks(self):
         self.draw_landmarks_enabled = not self.draw_landmarks_enabled
+
+    def _apply_debounce(self, *hands: Hand):
+        for hand in hands:
+            for i, finger in enumerate(hand.fingers):
+                raw = finger.raw_is_finger_bent()
+                key = (hand.handedness, i)
+                if key not in self._bend_debounce:
+                    self._bend_debounce[key] = [raw, raw, 1]
+                    finger.debounced_bent = raw
+                    continue
+                debounced, pending, count = self._bend_debounce[key]
+                if raw == pending:
+                    count += 1
+                    if count >= DEBOUNCE_FRAMES:
+                        debounced = pending
+                else:
+                    pending = raw
+                    count = 1
+                self._bend_debounce[key] = [debounced, pending, count]
+                finger.debounced_bent = debounced
 
     def perform(self, right_hand: Hand, left_hand: Hand, final_frame: np.ndarray):
         volume_min, volume_max = VOLUME_RATIO_BOUNDS[0], 1.0 - VOLUME_RATIO_BOUNDS[1]
@@ -139,6 +162,7 @@ class Theremin:
                 (hand for hand in self.vision.hands if hand.handedness == "Left"),
                 None,
             ):
+                self._apply_debounce(right_hand, left_hand)
                 self.perform(right_hand, left_hand, final_frame)
 
         else:
