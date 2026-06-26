@@ -182,6 +182,7 @@ class Theremin:
         self.cap = cv2.VideoCapture(0, backend)
         if not self.cap.isOpened():
             raise RuntimeError("Could not open camera. Check that it is connected and that permission has been granted.")
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self.hand_detector = self.mp_hands.Hands(
             model_complexity=0,
             min_detection_confidence=0.5,
