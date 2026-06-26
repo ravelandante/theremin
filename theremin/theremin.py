@@ -191,6 +191,8 @@ class Theremin:
         )
 
     def capture_frame_and_perform(self):
+        # Drain any frames that queued while MediaPipe was processing
+        self.cap.grab()
         success, frame = self.cap.read()
         if not success:
             return False, None, None
