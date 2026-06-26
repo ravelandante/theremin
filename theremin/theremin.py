@@ -1,5 +1,6 @@
 import cv2
 import mediapipe as mp
+import platform
 import time
 import numpy as np
 from dataclasses import dataclass
@@ -177,7 +178,8 @@ class Theremin:
         )
 
     def initialize_capture(self):
-        self.cap = cv2.VideoCapture(0)
+        backend = cv2.CAP_AVFOUNDATION if platform.system() == "Darwin" else cv2.CAP_ANY
+        self.cap = cv2.VideoCapture(0, backend)
         if not self.cap.isOpened():
             raise RuntimeError("Could not open camera. Check that it is connected and that permission has been granted.")
         self.hand_detector = self.mp_hands.Hands(
